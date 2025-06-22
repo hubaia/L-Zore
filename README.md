@@ -1,87 +1,149 @@
-# Welcome to React Router!
+# 🎮 Vite + Phaser + React UI 卡牌游戏
 
-A modern, production-ready template for building full-stack React applications using React Router.
+这是一个使用现代技术栈构建的高性能21点卡牌游戏项目。
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/remix-run/react-router-templates/tree/main/default)
+## 🚀 技术栈
 
-## Features
+- **⚡ Vite** - 极速构建工具和开发服务器
+- **🎮 Phaser 3** - 强大的2D游戏引擎
+- **📦 phaser-react-ui** - Phaser与React的无缝集成
+- **⚛️ React 19** - 最新版本的React框架
+- **🛣️ React Router v7** - 现代路由系统
+- **🎨 Tailwind CSS** - 原子化CSS框架
+- **📘 TypeScript** - 类型安全
 
-- 🚀 Server-side rendering
-- ⚡️ Hot Module Replacement (HMR)
-- 📦 Asset bundling and optimization
-- 🔄 Data loading and mutations
-- 🔒 TypeScript by default
-- 🎉 TailwindCSS for styling
-- 📖 [React Router docs](https://reactrouter.com/)
+## ✨ 项目特色
 
-## Getting Started
+### ⚡ Vite优势
+- 极速热重载 (HMR)
+- TypeScript原生支持
+- 现代ES模块
+- 优化的构建过程
 
-### Installation
+### 🎮 游戏特性
+- React + Phaser集成
+- 响应式缩放
+- 流畅动画效果
+- 事件驱动架构
 
-Install the dependencies:
+### 🃏 游戏功能
+- 完整的21点游戏规则
+- 智能A牌计分（1或11点）
+- 庄家自动AI（17点以下要牌）
+- 精美的卡牌发放动画
+- 实时胜率统计
+- 游戏状态持久化
 
+## 🎯 游戏规则
+
+- **目标**：让手牌总分接近21点而不超过
+- **计分**：
+  - A可以是1点或11点（自动选择最优）
+  - J、Q、K都是10点
+  - 其他牌按面值计分
+- **规则**：
+  - 超过21点即爆牌
+  - 庄家17点以下必须要牌
+  - 先到21点或更接近21点者获胜
+
+## 🚀 快速开始
+
+### 安装依赖
 ```bash
 npm install
 ```
 
-### Development
-
-Start the development server with HMR:
-
+### 启动开发服务器
 ```bash
 npm run dev
 ```
 
-Your application will be available at `http://localhost:5173`.
-
-## Building for Production
-
-Create a production build:
-
+### 构建生产版本
 ```bash
 npm run build
 ```
 
-## Deployment
-
-### Docker Deployment
-
-To build and run using Docker:
-
+### 启动生产服务器
 ```bash
-docker build -t my-app .
-
-# Run the container
-docker run -p 3000:3000 my-app
+npm start
 ```
 
-The containerized application can be deployed to any platform that supports Docker, including:
-
-- AWS ECS
-- Google Cloud Run
-- Azure Container Apps
-- Digital Ocean App Platform
-- Fly.io
-- Railway
-
-### DIY Deployment
-
-If you're familiar with deploying Node applications, the built-in app server is production-ready.
-
-Make sure to deploy the output of `npm run build`
+## 📁 项目结构
 
 ```
-├── package.json
-├── package-lock.json (or pnpm-lock.yaml, or bun.lockb)
-├── build/
-│   ├── client/    # Static assets
-│   └── server/    # Server-side code
+app/
+├── components/
+│   ├── ViteCardGame.tsx    # 主游戏组件
+│   └── GameUI.tsx          # React UI界面
+├── routes/
+│   ├── home.tsx            # 首页
+│   └── game.tsx            # 游戏页面
+├── welcome/                # 欢迎页面组件
+├── routes.ts               # 路由配置
+└── root.tsx                # 应用根组件
 ```
 
-## Styling
+## 🎨 界面预览
 
-This template comes with [Tailwind CSS](https://tailwindcss.com/) already configured for a simple default starting experience. You can use whatever CSS framework you prefer.
+- **首页**：欢迎界面 + 开始游戏按钮
+- **游戏页面**：
+  - Phaser游戏画布（800x600）
+  - React UI覆盖层
+  - 实时分数显示
+  - 胜率统计
+  - 游戏控制按钮
+
+## 🔧 技术实现
+
+### Phaser游戏场景
+- **ViteBlackjackScene**：主游戏逻辑
+- 卡牌纹理动态生成
+- 发牌动画系统
+- 事件驱动状态管理
+
+### React UI层
+- **GameUI**：游戏界面组件
+- 使用React事件监听Phaser场景
+- Tailwind CSS样式
+- 响应式设计
+
+### 架构优势
+- **分离关注点**：游戏逻辑与UI分离
+- **类型安全**：全面的TypeScript支持
+- **热重载**：极速开发体验
+- **现代化**：使用最新技术栈
+
+## 🎪 演示功能
+
+1. **发牌动画**：平滑的卡牌发放效果
+2. **智能计分**：A牌自动调整为1或11点
+3. **庄家AI**：自动执行庄家规则
+4. **胜率统计**：实时显示胜负记录
+5. **响应式UI**：适配不同屏幕尺寸
+
+## 📱 访问方式
+
+启动开发服务器后访问：
+- 首页：http://localhost:3000
+- 游戏：http://localhost:3000/game
+
+## 🛠️ 开发说明
+
+### 关键依赖
+- `phaser@^3.90.0` - 游戏引擎
+- `phaser-react-ui@^1.16.0` - React集成
+- `react@^19.1.0` - UI框架
+- `vite@^6.3.3` - 构建工具
+
+### 兼容性
+- 使用 `--legacy-peer-deps` 解决React 19兼容性问题
+- 支持现代浏览器
+- ES2020+ 语法支持
+
+## 📝 许可证
+
+本项目基于 MIT 许可证开源。
 
 ---
 
-Built with ❤️ using React Router.
+**享受游戏！** 🎉
