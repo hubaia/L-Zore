@@ -1,8 +1,13 @@
-import { reactRouter } from "@react-router/dev/vite";
-import tailwindcss from "@tailwindcss/vite";
-import { defineConfig } from "vite";
-import tsconfigPaths from "vite-tsconfig-paths";
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
-  plugins: [tailwindcss(), reactRouter(), tsconfigPaths()],
+  plugins: [react(), tailwindcss()],
+  base: '', // 使用相对路径，解决静态服务器部署问题
+  resolve: {
+    alias: {
+      '@': '/src',
+    },
+  },
 });
