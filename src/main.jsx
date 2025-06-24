@@ -5,6 +5,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import app from './dva';
 import Home from './routes/home';
 import Game from './routes/game';
+import PixelGame from './routes/pixel-game';
 import './app.css';
 
 const container = document.getElementById('root');
@@ -17,6 +18,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/game" element={<Game />} />
+          <Route path="/pixel-game" element={<PixelGame />} />
         </Routes>
       </BrowserRouter>
     </Provider>
