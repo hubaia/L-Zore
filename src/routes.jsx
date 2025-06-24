@@ -8,6 +8,10 @@ export const routes = [
     path: "/game", 
     component: "routes/game.tsx",
   },
+  {
+    path: "/phaser-lzore",
+    component: "routes/phaser-lzore.tsx",
+  },
 ];
 
 export default routes;
