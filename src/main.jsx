@@ -6,6 +6,7 @@ import app from './dva';
 import Home from './routes/home';
 import Game from './routes/game';
 import PixelGame from './routes/pixel-game';
+import PhaserLZorePage from './routes/phaser-lzore';
 import './app.css';
 
 const container = document.getElementById('root');
@@ -19,6 +20,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/game" element={<Game />} />
           <Route path="/pixel-game" element={<PixelGame />} />
+          <Route path="/phaser-lzore" element={<PhaserLZorePage />} />
         </Routes>
       </BrowserRouter>
     </Provider>

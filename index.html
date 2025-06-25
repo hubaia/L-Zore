@@ -513,7 +513,7 @@
     </style>
   </head>
   <body>
-    <div class="game-container">
+    <!-- <div class="game-container">
         <header class="header">
             <h1 class="game-title">L-Zore 神煞卡牌战斗系统</h1>
             <p class="subtitle">融合传统命理学与赛博朋克的创新卡牌游戏</p>
@@ -523,10 +523,6 @@
             <div class="status-item">
                 <span class="status-label">回合:</span>
                 <span class="status-value" id="currentTurn">1</span>
-            </div>
-            <div class="status-item">
-                <span class="status-label">行动点:</span>
-                <span class="status-value" id="actionPoints">3</span>
             </div>
             <div class="status-item">
                 <span class="status-label">手牌:</span>
@@ -544,7 +540,7 @@
                 <div class="health-bar">
                     <div class="health-fill" id="playerHealth" style="width: 100%"></div>
                 </div>
-                <p>生命值: <span id="playerHealthText">8/8</span> 枚</p>
+                <p>八字: <span id="playerHealthText" style="font-size: 0.9rem; color: #4ecdc4;">甲子 乙丑 丙寅 丁卯</span></p>
                 <p>状态: <span id="playerStatus">正常</span></p>
                 <div style="margin-top: 15px;">
                     <p><strong>激活神煞:</strong></p>
@@ -559,73 +555,29 @@
                     <div class="opponent-row">
                         <div class="grid-cell opponent" data-position="0">
                             <div class="pillar-label">年柱</div>
-                            <div class="stem-branch-label">天干</div>
                         </div>
                         <div class="grid-cell opponent" data-position="1">
                             <div class="pillar-label">月柱</div>
-                            <div class="stem-branch-label">天干</div>
                         </div>
                         <div class="grid-cell opponent" data-position="2">
                             <div class="pillar-label">日柱</div>
-                            <div class="stem-branch-label">天干</div>
                         </div>
                         <div class="grid-cell opponent" data-position="3">
                             <div class="pillar-label">时柱</div>
-                            <div class="stem-branch-label">天干</div>
-                        </div>
-                    </div>
-                    <div class="opponent-row">
-                        <div class="grid-cell opponent" data-position="4">
-                            <div class="pillar-label">年柱</div>
-                            <div class="stem-branch-label">地支</div>
-                        </div>
-                        <div class="grid-cell opponent" data-position="5">
-                            <div class="pillar-label">月柱</div>
-                            <div class="stem-branch-label">地支</div>
-                        </div>
-                        <div class="grid-cell opponent" data-position="6">
-                            <div class="pillar-label">日柱</div>
-                            <div class="stem-branch-label">地支</div>
-                        </div>
-                        <div class="grid-cell opponent" data-position="7">
-                            <div class="pillar-label">时柱</div>
-                            <div class="stem-branch-label">地支</div>
                         </div>
                     </div>
                     <div class="player-row">
-                        <div class="grid-cell player" data-position="8">
+                        <div class="grid-cell player" data-position="4">
                             <div class="pillar-label">年柱</div>
-                            <div class="stem-branch-label">地支</div>
                         </div>
-                        <div class="grid-cell player" data-position="9">
+                        <div class="grid-cell player" data-position="5">
                             <div class="pillar-label">月柱</div>
-                            <div class="stem-branch-label">地支</div>
                         </div>
-                        <div class="grid-cell player" data-position="10">
+                        <div class="grid-cell player" data-position="6">
                             <div class="pillar-label">日柱</div>
-                            <div class="stem-branch-label">地支</div>
                         </div>
-                        <div class="grid-cell player" data-position="11">
+                        <div class="grid-cell player" data-position="7">
                             <div class="pillar-label">时柱</div>
-                            <div class="stem-branch-label">地支</div>
-                        </div>
-                    </div>
-                    <div class="player-row">
-                        <div class="grid-cell player" data-position="12">
-                            <div class="pillar-label">年柱</div>
-                            <div class="stem-branch-label">天干</div>
-                        </div>
-                        <div class="grid-cell player" data-position="13">
-                            <div class="pillar-label">月柱</div>
-                            <div class="stem-branch-label">天干</div>
-                        </div>
-                        <div class="grid-cell player" data-position="14">
-                            <div class="pillar-label">日柱</div>
-                            <div class="stem-branch-label">天干</div>
-                        </div>
-                        <div class="grid-cell player" data-position="15">
-                            <div class="pillar-label">时柱</div>
-                            <div class="stem-branch-label">天干</div>
                         </div>
                     </div>
                 </div>
@@ -647,10 +599,12 @@
         </div>
 
         <div class="hand-cards" id="handCards">
-            <!-- 手牌将通过JavaScript动态生成 -->
+            手牌将通过JavaScript动态生成
         </div>
     </div>
 
-    <script src="src/components/LZoreGame.js"></script>
+    <script src="src/components/LZoreGame.js"></script> -->
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
   </body>
 </html> 

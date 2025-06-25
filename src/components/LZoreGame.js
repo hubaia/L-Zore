@@ -3,8 +3,6 @@
 class LZoreGame {
     constructor() {
         this.currentTurn = 1;
-        this.actionPoints = 3;
-        this.maxActionPoints = 3;
         this.gamePhase = 'preparation'; // preparation, battle, ended
         this.selectedCard = null;
         this.publicPool = [];
@@ -13,10 +11,15 @@ class LZoreGame {
         // 玩家状态
         this.player = {
             name: '络尘',
-            health: 8,
-            maxHealth: 8,
+            bazi: {
+                year: { gan: '甲', zhi: '子' },
+                month: { gan: '乙', zhi: '丑' },
+                day: { gan: '丙', zhi: '寅' },
+                hour: { gan: '丁', zhi: '卯' }
+            },
+            remainingElements: 8, // 剩余元素数量
             hand: [],
-            board: new Array(8).fill(null), // 玩家的8个位置
+            board: new Array(4).fill(null), // 玩家的4个位置（年月日时）
             activeGods: [],
             status: '正常'
         };
@@ -24,10 +27,15 @@ class LZoreGame {
         // AI对手状态
         this.opponent = {
             name: 'AI虚拟人格',
-            health: 8,
-            maxHealth: 8,
+            bazi: {
+                year: { gan: '戊', zhi: '辰' },
+                month: { gan: '己', zhi: '巳' },
+                day: { gan: '庚', zhi: '午' },
+                hour: { gan: '辛', zhi: '未' }
+            },
+            remainingElements: 8, // 剩余元素数量
             hand: [],
-            board: new Array(8).fill(null), // AI的8个位置
+            board: new Array(4).fill(null), // AI的4个位置（年月日时）
             activeGods: [],
             status: '正常'
         };
@@ -55,7 +63,6 @@ class LZoreGame {
                 type: 'auspicious',
                 element: 'metal',
                 power: 4,
-                cost: 2,
                 rarity: '⭐⭐⭐',
                 description: '最高吉星，避免厄运，遇事有人帮',
                 effect: '保护己方4枚元素不被中和',
@@ -68,7 +75,6 @@ class LZoreGame {
                 type: 'auspicious',
                 element: 'water',
                 power: 2,
-                cost: 1,
                 rarity: '⭐⭐',
                 description: '聪明擅艺，主聪明过人，利考试学术',
                 effect: '中和对方2枚元素，智慧加成',
@@ -81,10 +87,9 @@ class LZoreGame {
                 type: 'auspicious',
                 element: 'earth',
                 power: 1,
-                cost: 1,
                 rarity: '⭐',
                 description: '主福禄财运，象征稳定收入地位',
-                effect: '每回合获得1点行动点数',
+                effect: '每回合获得额外效果',
                 condition: '天干归位',
                 pillarPreference: ['year', 'month']
             },
@@ -94,7 +99,6 @@ class LZoreGame {
                 type: 'auspicious',
                 element: 'metal',
                 power: 2,
-                cost: 1,
                 rarity: '⭐⭐',
                 description: '华丽富贵车，聪明富贵，性格温和',
                 effect: '增加资源获取，防御+1',
@@ -107,7 +111,6 @@ class LZoreGame {
                 type: 'auspicious',
                 element: 'special',
                 power: 4,
-                cost: 3,
                 rarity: '⭐⭐⭐',
                 description: '聪明好学，喜神秘事物如命理卜筮',
                 effect: '阴阳转化，逆转五行关系',
@@ -122,7 +125,6 @@ class LZoreGame {
                 type: 'inauspicious',
                 element: 'fire',
                 power: 3,
-                cost: 2,
                 rarity: '⭐⭐⭐',
                 description: '刚烈冲动，易惹是非，吉则勇猛',
                 effect: '中和对方3枚元素，可能反噬',
@@ -135,7 +137,6 @@ class LZoreGame {
                 type: 'inauspicious',
                 element: 'metal',
                 power: 2,
-                cost: 1,
                 rarity: '⭐⭐',
                 description: '一生多是非破财，破财小人意外',
                 effect: '破坏对方资源，中和2枚',
@@ -148,7 +149,6 @@ class LZoreGame {
                 type: 'inauspicious',
                 element: 'water',
                 power: 3,
-                cost: 2,
                 rarity: '⭐⭐⭐',
                 description: '自内失之为亡，容易招惹是非',
                 effect: '对已受损目标威力翻倍',
@@ -161,7 +161,6 @@ class LZoreGame {
                 type: 'inauspicious',
                 element: 'special',
                 power: 2,
-                cost: 1,
                 rarity: '⭐⭐',
                 description: '象征力量落空，吉神减力凶煞化解',
                 effect: '使目标暂时失效',
@@ -174,7 +173,6 @@ class LZoreGame {
                 type: 'inauspicious',
                 element: 'water',
                 power: 1,
-                cost: 1,
                 rarity: '⭐',
                 description: '风流酒色，与异性纠缠不清',
                 effect: '迷惑对方，影响决策',
@@ -189,7 +187,6 @@ class LZoreGame {
                 type: 'special',
                 element: 'earth',
                 power: 1,
-                cost: 1,
                 rarity: '⭐',
                 description: '性情恬淡资质聪颖，易倾向宗教艺术',
                 effect: '隐藏战术意图，属性转换',
@@ -202,7 +199,6 @@ class LZoreGame {
                 type: 'special',
                 element: 'fire',
                 power: 2,
-                cost: 1,
                 rarity: '⭐⭐',
                 description: '主奔波变动异地发展，吉则升迁远行',
                 effect: '增加行动次数，快速移动',
@@ -215,7 +211,6 @@ class LZoreGame {
                 type: 'special',
                 element: 'metal',
                 power: 3,
-                cost: 2,
                 rarity: '⭐⭐⭐',
                 description: '权力之星，具有组织领导才能',
                 effect: '指挥其他神煞协战',
@@ -228,7 +223,6 @@ class LZoreGame {
                 type: 'special',
                 element: 'earth',
                 power: 4,
-                cost: 3,
                 rarity: '⭐⭐⭐',
                 description: '刚烈正直勇猛，耿直胸无城府',
                 effect: '无视部分防御，霸道威力',
@@ -241,7 +235,6 @@ class LZoreGame {
                 type: 'special',
                 element: 'wood',
                 power: 2,
-                cost: 2,
                 rarity: '⭐⭐',
                 description: '天庭童男女因犯过错转世人间',
                 effect: '净化负面效果',
@@ -288,8 +281,8 @@ class LZoreGame {
     // 设置AI对手的初始布局
     setupOpponentBoard() {
         // AI随机部署一些神煞卡牌
-        const opponentCards = this.drawCards(4);
-        const positions = [0, 1, 2, 3]; // 天干位置
+        const opponentCards = this.drawCards(2);
+        const positions = [0, 1]; // 只在前两个位置放置卡牌
         
         opponentCards.forEach((card, index) => {
             this.opponent.board[positions[index]] = card;
@@ -400,18 +393,14 @@ class LZoreGame {
     canDropCard(cellElement) {
         if (!this.draggedCard) return false;
         
-        const position = parseInt(cellElement.dataset.position) - 8;
+        const position = parseInt(cellElement.dataset.position) - 4;
         
         // 检查位置是否已被占用
         if (this.player.board[position] !== null) {
             return false;
         }
         
-        // 检查行动点数是否足够
-        if (this.actionPoints < this.draggedCard.cost) {
-            return false;
-        }
-        
+        // 移除行动点数检查
         return true;
     }
     
@@ -419,7 +408,7 @@ class LZoreGame {
     dropCard(cellElement) {
         if (!this.draggedCard) return;
         
-        const position = parseInt(cellElement.dataset.position) - 8;
+        const position = parseInt(cellElement.dataset.position) - 4;
         
         if (!this.canDropCard(cellElement)) {
             this.addLogEntry('无法在此位置放置卡牌！', 'system');
@@ -428,7 +417,7 @@ class LZoreGame {
         
         // 放置卡牌
         this.player.board[position] = this.draggedCard;
-        this.actionPoints -= this.draggedCard.cost;
+        // 移除行动点数扣除
         
         // 从手牌中移除
         this.player.hand = this.player.hand.filter(card => card.id !== this.draggedCard.id);
@@ -489,28 +478,25 @@ class LZoreGame {
     
     // 检查位置是否被占用
     isPositionOccupied(position) {
-        return this.player.board[position - 8] !== null;
+        return this.player.board[position - 4] !== null;
     }
     
     // 放置卡牌
     placeCard(cellElement) {
         if (!this.selectedCard) return;
         
-        const position = parseInt(cellElement.dataset.position) - 8; // 转换为玩家板面索引
+        const position = parseInt(cellElement.dataset.position) - 4; // 转换为玩家板面索引
         
         if (this.player.board[position] !== null) {
             this.addLogEntry('该位置已被占用！', 'system');
             return;
         }
         
-        if (this.actionPoints < this.selectedCard.cost) {
-            this.addLogEntry('行动点数不足！', 'system');
-            return;
-        }
+        // 移除行动点数检查
         
         // 放置卡牌
         this.player.board[position] = this.selectedCard;
-        this.actionPoints -= this.selectedCard.cost;
+        // 移除行动点数扣除
         
         // 从手牌中移除
         this.player.hand = this.player.hand.filter(card => card.id !== this.selectedCard.id);
@@ -529,7 +515,7 @@ class LZoreGame {
     
     // 获取位置名称
     getPositionName(position) {
-        const names = ['年柱地支', '月柱地支', '日柱地支', '时柱地支', '年柱天干', '月柱天干', '日柱天干', '时柱天干'];
+        const names = ['年柱', '月柱', '日柱', '时柱'];
         return names[position];
     }
     
@@ -600,7 +586,6 @@ class LZoreGame {
         
         // 开始新回合
         this.currentTurn++;
-        this.actionPoints = this.maxActionPoints;
         
         // 抽卡
         if (this.player.hand.length < 7) {
@@ -647,11 +632,11 @@ class LZoreGame {
         if (attackCards.length > 0) {
             const card = attackCards[0];
             const damage = this.calculateDamage(card);
-            this.player.health = Math.max(0, this.player.health - damage);
+            this.player.remainingElements = Math.max(0, this.player.remainingElements - damage);
             
-            this.addLogEntry(`AI使用 ${card.name} 造成 ${damage} 点伤害`, 'opponent');
+            this.addLogEntry(`AI使用 ${card.name} 中和 ${damage} 枚元素`, 'opponent');
             
-            if (this.player.health <= 0) {
+            if (this.player.remainingElements <= 0) {
                 this.endGame('defeat');
             }
         } else {
@@ -700,16 +685,15 @@ class LZoreGame {
     processOngoingEffects() {
         // 处理禄神的资源生成
         if (this.player.activeGods.includes('禄神')) {
-            this.actionPoints = Math.min(6, this.actionPoints + 1);
-            this.addLogEntry('禄神效果：获得1点行动点数', 'player');
+            this.addLogEntry('禄神效果：获得额外效果', 'player');
         }
     }
     
     // 检查胜负条件
     checkWinConditions() {
-        if (this.player.health <= 0) {
+        if (this.player.remainingElements <= 0) {
             this.endGame('defeat');
-        } else if (this.opponent.health <= 0) {
+        } else if (this.opponent.remainingElements <= 0) {
             this.endGame('victory');
         } else if (this.currentTurn >= 15) {
             this.endGame('draw');
@@ -743,9 +727,9 @@ class LZoreGame {
                 // 属性分配：恢复空位或强化神煞
                 break;
             case 'inauspicious':
-                this.addLogEntry(`${card.name} 对双方造成伤害`, 'system');
-                this.player.health = Math.max(0, this.player.health - 1);
-                this.opponent.health = Math.max(0, this.opponent.health - 1);
+                this.addLogEntry(`${card.name} 对双方造成中和效果`, 'system');
+                this.player.remainingElements = Math.max(0, this.player.remainingElements - 1);
+                this.opponent.remainingElements = Math.max(0, this.opponent.remainingElements - 1);
                 // 属性分配：中和凶神或削弱对手
                 break;
             case 'special':
@@ -772,15 +756,15 @@ class LZoreGame {
     executeGodAbility(godName) {
         switch (godName) {
             case '天乙贵人':
-                this.addLogEntry('天乙贵人：保护己方免受伤害', 'player');
+                this.addLogEntry('天乙贵人：保护己方免受中和', 'player');
                 break;
             case '文昌贵人':
                 this.addLogEntry('文昌贵人：智慧加成，额外抽卡', 'player');
                 this.player.hand.push(...this.drawCards(1));
                 break;
             case '羊刃':
-                this.addLogEntry('羊刃：对敌方造成强力攻击', 'player');
-                this.opponent.health = Math.max(0, this.opponent.health - 3);
+                this.addLogEntry('羊刃：对敌方造成强力中和', 'player');
+                this.opponent.remainingElements = Math.max(0, this.opponent.remainingElements - 3);
                 break;
             default:
                 this.addLogEntry(`${godName}：发动特殊效果`, 'player');
@@ -841,7 +825,6 @@ class LZoreGame {
     // 更新状态栏
     updateStatusBar() {
         document.getElementById('currentTurn').textContent = this.currentTurn;
-        document.getElementById('actionPoints').textContent = this.actionPoints;
         document.getElementById('handCount').textContent = this.player.hand.length;
         
         // 更新大运
@@ -852,9 +835,12 @@ class LZoreGame {
     
     // 更新玩家信息
     updatePlayerInfo() {
-        const healthPercent = (this.player.health / this.player.maxHealth) * 100;
-        document.getElementById('playerHealth').style.width = `${healthPercent}%`;
-        document.getElementById('playerHealthText').textContent = `${this.player.health}/${this.player.maxHealth}`;
+        const elementsPercent = (this.player.remainingElements / 8) * 100;
+        document.getElementById('playerHealth').style.width = `${elementsPercent}%`;
+        
+        // 显示八字而不是数值
+        const baziText = `${this.player.bazi.year.gan}${this.player.bazi.year.zhi} ${this.player.bazi.month.gan}${this.player.bazi.month.zhi} ${this.player.bazi.day.gan}${this.player.bazi.day.zhi} ${this.player.bazi.hour.gan}${this.player.bazi.hour.zhi}`;
+        document.getElementById('playerHealthText').textContent = baziText;
         
         document.getElementById('playerStatus').textContent = this.player.status;
         document.getElementById('playerActiveGods').textContent = 
@@ -888,7 +874,6 @@ class LZoreGame {
             <div class="card-description">${card.description}</div>
             <div class="card-stats">
                 <div class="stat power-stat">⚡${card.power}</div>
-                <div class="stat">💰${card.cost}</div>
             </div>
         `;
         
@@ -907,16 +892,15 @@ class LZoreGame {
     
     // 更新战场
     updateBoard() {
-        // 更新玩家板面
-        for (let i = 0; i < 8; i++) {
-            const cell = document.querySelector(`[data-position="${i + 8}"]`);
+        // 更新玩家板面（4个位置）
+        for (let i = 0; i < 4; i++) {
+            const cell = document.querySelector(`[data-position="${i + 4}"]`);
             const card = this.player.board[i];
             
             if (card) {
                 cell.classList.add('occupied');
                 cell.innerHTML = `
                     <div class="pillar-label">${this.getPillarLabel(i)}</div>
-                    <div class="stem-branch-label">${this.getStemBranchLabel(i)}</div>
                     <div class="card-in-cell">
                         <div class="card-name element-${card.element}">${card.name}</div>
                         <div class="card-power">⚡${card.power}</div>
@@ -926,13 +910,12 @@ class LZoreGame {
                 cell.classList.remove('occupied');
                 cell.innerHTML = `
                     <div class="pillar-label">${this.getPillarLabel(i)}</div>
-                    <div class="stem-branch-label">${this.getStemBranchLabel(i)}</div>
                 `;
             }
         }
         
-        // 更新对手板面
-        for (let i = 0; i < 8; i++) {
+        // 更新对手板面（4个位置）
+        for (let i = 0; i < 4; i++) {
             const cell = document.querySelector(`[data-position="${i}"]`);
             const card = this.opponent.board[i];
             
@@ -940,11 +923,15 @@ class LZoreGame {
                 cell.classList.add('occupied');
                 cell.innerHTML = `
                     <div class="pillar-label">${this.getPillarLabel(i)}</div>
-                    <div class="stem-branch-label">${this.getStemBranchLabel(i)}</div>
                     <div class="card-in-cell">
                         <div class="card-name element-${card.element}">${card.name}</div>
                         <div class="card-power">⚡${card.power}</div>
                     </div>
+                `;
+            } else {
+                cell.classList.remove('occupied');
+                cell.innerHTML = `
+                    <div class="pillar-label">${this.getPillarLabel(i)}</div>
                 `;
             }
         }
@@ -952,13 +939,8 @@ class LZoreGame {
     
     // 获取柱位标签
     getPillarLabel(position) {
-        const labels = ['年柱', '月柱', '日柱', '时柱', '年柱', '月柱', '日柱', '时柱'];
+        const labels = ['年柱', '月柱', '日柱', '时柱'];
         return labels[position];
-    }
-    
-    // 获取天干地支标签
-    getStemBranchLabel(position) {
-        return position < 4 ? '地支' : '天干';
     }
 }
 
