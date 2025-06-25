@@ -27,17 +27,32 @@ export interface BaZi {
 }
 
 /**
- * 游戏状态接口 - 添加回合状态 
+ * 游戏状态接口 - 即时卡牌系统
  */
 export interface GameState {
-    currentTurn: number;
-    currentPlayer: 'player' | 'opponent'; // 当前行动方
+    // 实时系统相关
+    gameTime: number; // 游戏总时间（秒）
+    currentCycle: number; // 当前周期（每10秒一个周期）
+    
+    // 冷却系统
+    playerCooldownRemaining: number; // 玩家冷却剩余时间（秒）
+    opponentCooldownRemaining: number; // 对手冷却剩余时间（秒）
+    
+    // 优先权系统
+    activePlayer: 'player' | 'opponent' | 'none'; // 当前拥有使用神煞权限的玩家
+    priorityHolder: 'player' | 'opponent' | 'none'; // 优先权持有者（先打出卡牌的玩家）
+    
+    // 原有系统
     playerBazi: BaZi;
     opponentBazi: BaZi;
     playerRemainingElements: number;
     opponentRemainingElements: number;
-    gamePhase: 'preparation' | 'battle' | 'ended';
+    gamePhase: 'preparation' | 'realtime' | 'ended';
     battleFieldPositions: (LZoreCard | null)[]; // 战场位置状态
+    
+    // 实时状态
+    canPlayerUseCards: boolean; // 玩家是否可以使用卡牌
+    canOpponentUseCards: boolean; // 对手是否可以使用卡牌
 }
 
 /**

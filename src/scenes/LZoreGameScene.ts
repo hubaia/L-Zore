@@ -1,7 +1,9 @@
 import Phaser from 'phaser';
+import { Interface } from 'phaser-react-ui';
 import type { LZoreCard, GameState, OpponentAction } from '../types/gameTypes';
 import { CARD_DATABASE, INITIAL_GAME_STATE, GAME_CONFIG } from '../constants/gameData';
-import { getElementText, getCardTypeColor, getPillarName, isPositionSafe, PixelDrawUtils } from '../utils/gameUtils';
+import { getElementText, getCardTypeColor, getPillarName, isPositionSafe, PixelDrawUtils, getFullBaZiText, getBaZiPillarInfo } from '../utils/gameUtils';
+import { LZoreGameUI } from '../components/LZoreGameUI';
 
 /**
  * L-Zore神煞卡牌游戏场景
@@ -28,6 +30,9 @@ export class LZoreGameScene extends Phaser.Scene {
     private opponentCards: LZoreCard[] = []; // 对手的卡牌
     private opponentPlacedCards: Phaser.GameObjects.Container[] = []; // 对手已放置的卡牌
     private isOpponentTurn: boolean = false;
+    
+    // phaser-react-ui 接口
+    private ui!: Interface;
 
     constructor() {
         super({ key: 'LZoreGameScene' });
@@ -84,6 +89,12 @@ export class LZoreGameScene extends Phaser.Scene {
         
         // 启动全局位置监控系统
         this.startGlobalPositionMonitor();
+        
+        // 添加键盘快捷键支持
+        this.setupKeyboardControls();
+        
+        // 初始化phaser-react-ui接口
+        this.initializeUI();
         
         // 发送游戏就绪事件
         this.events.emit('gameReady');
@@ -308,10 +319,175 @@ export class LZoreGameScene extends Phaser.Scene {
     }
 
     /**
-     * 初始化游戏状态
+     * 初始化游戏状态 - 即时系统
      */
     private initializeGameState() {
         this.gameState = { ...INITIAL_GAME_STATE };
+        this.gameState.gamePhase = 'realtime'; // 直接进入实时模式
+        
+        // 启动实时系统
+        this.startRealtimeSystem();
+    }
+    
+    /**
+     * 启动实时系统
+     */
+    private startRealtimeSystem() {
+        // 游戏主计时器 - 每100ms更新一次
+        this.time.addEvent({
+            delay: 100,
+            callback: this.updateRealtimeSystem,
+            callbackScope: this,
+            loop: true
+        });
+        
+        // 自动抽卡计时器 - 每3秒自动抽卡
+        this.time.addEvent({
+            delay: GAME_CONFIG.AUTO_DRAW_INTERVAL * 1000,
+            callback: this.autoDrawCards,
+            callbackScope: this,
+            loop: true
+        });
+        
+        this.showMessage('🚀 即时卡牌系统启动！双方同时进行，抢先打出获得优先权！', 'success');
+    }
+    
+    /**
+     * 更新实时系统
+     */
+    private updateRealtimeSystem() {
+        if (this.gameState.gamePhase !== 'realtime') return;
+        
+        // 更新游戏时间
+        this.gameState.gameTime += 0.1;
+        
+        // 更新周期
+        const newCycle = Math.floor(this.gameState.gameTime / GAME_CONFIG.CYCLE_DURATION) + 1;
+        if (newCycle > this.gameState.currentCycle) {
+            this.gameState.currentCycle = newCycle;
+            this.onNewCycle();
+        }
+        
+        // 更新冷却时间
+        if (this.gameState.playerCooldownRemaining > 0) {
+            this.gameState.playerCooldownRemaining = Math.max(0, this.gameState.playerCooldownRemaining - 0.1);
+            this.gameState.canPlayerUseCards = this.gameState.playerCooldownRemaining <= 0;
+        }
+        
+        if (this.gameState.opponentCooldownRemaining > 0) {
+            this.gameState.opponentCooldownRemaining = Math.max(0, this.gameState.opponentCooldownRemaining - 0.1);
+            this.gameState.canOpponentUseCards = this.gameState.opponentCooldownRemaining <= 0;
+        }
+        
+        // 检查优先权超时
+        this.checkPriorityTimeout();
+        
+        // 更新UI
+        this.updateGameStateUI();
+    }
+    
+    /**
+     * 新周期开始
+     */
+    private onNewCycle() {
+        this.showMessage(`🔄 第${this.gameState.currentCycle}周期开始！公共卡池更新`, 'warning');
+        // 这里可以添加公共卡池更新逻辑
+    }
+    
+    /**
+     * 自动抽卡系统
+     */
+    private autoDrawCards() {
+        if (this.gameState.gamePhase !== 'realtime') return;
+        
+        // 双方同时自动抽卡
+        if (this.playerHand.children.entries.length < 7) {
+            this.drawCard();
+        }
+        
+        if (this.opponentHand.children.entries.length < 7) {
+            this.drawOpponentCard();
+        }
+    }
+    
+    /**
+     * 检查优先权超时
+     */
+    private checkPriorityTimeout() {
+        // 如果有优先权持有者但超过超时时间，重置优先权
+        if (this.gameState.priorityHolder !== 'none' && this.gameState.activePlayer !== 'none') {
+            // 这里可以添加超时逻辑
+        }
+    }
+
+    /**
+     * 初始化phaser-react-ui接口
+     */
+    private initializeUI() {
+        try {
+            this.ui = new Interface(this);
+            this.ui.render(LZoreGameUI);
+            
+            // 设置UI事件监听器
+            this.setupUIEventListeners();
+            
+            console.log('🎮 phaser-react-ui 初始化成功');
+        } catch (error) {
+            console.error('❌ phaser-react-ui 初始化失败:', error);
+        }
+    }
+
+    /**
+     * 设置UI事件监听器
+     */
+    private setupUIEventListeners() {
+        // 监听来自React UI的事件
+        this.events.on('drawCard', () => {
+            this.drawCard();
+        });
+
+        this.events.on('endTurn', () => {
+            this.endTurn();
+        });
+
+        this.events.on('useSpecialAbility', () => {
+            this.useSpecialAbility();
+        });
+
+        this.events.on('effectTarget', (position: number) => {
+            console.log('选择目标位置:', position);
+            // 处理效果目标选择
+            this.closeEffectPanel();
+        });
+
+        this.events.on('closeEffectPanel', () => {
+            this.closeEffectPanel();
+        });
+    }
+
+    /**
+     * 更新游戏状态UI
+     */
+    private updateGameStateUI() {
+        const gameStateData = {
+            playerHealth: 100, // 可以从实际游戏状态获取
+            opponentHealth: 100,
+            playerEnergy: 50,
+            currentTurn: this.gameState.currentCycle, // 使用当前周期
+            playerHandCount: this.playerHand ? this.playerHand.children.entries.length : 0,
+            isPlayerTurn: this.gameState.canPlayerUseCards, // 基于是否可以使用卡牌
+            battlefieldCards: this.placedCards.length,
+            
+            // 新增即时系统状态
+            gameTime: this.gameState.gameTime,
+            playerCooldown: this.gameState.playerCooldownRemaining,
+            opponentCooldown: this.gameState.opponentCooldownRemaining,
+            activePlayer: this.gameState.activePlayer,
+            priorityHolder: this.gameState.priorityHolder
+        };
+
+        // 发送状态更新事件给React UI
+        this.events.emit('gameStateUpdate', gameStateData);
     }
 
     /**
@@ -611,13 +787,20 @@ export class LZoreGameScene extends Phaser.Scene {
 
 
     /**
-     * 创建战场布局 - 调整为双方各4个位置，并存储格子引用
+     * 创建战场布局 - 调整为双方各4个位置，适应全屏布局
      */
     private createBattleField() {
         const { width, height } = this.scale;
         
+        // 战场居中，但避开左右面板区域
+        const leftPanelWidth = 340; // 留出左侧面板空间
+        const rightPanelWidth = 220; // 留出右侧面板空间
+        const availableWidth = width - leftPanelWidth - rightPanelWidth;
+        const battleFieldX = leftPanelWidth + availableWidth / 2;
+        const battleFieldY = height / 2;
+        
         // 创建八格战场容器
-        this.battleField = this.add.container(width / 2, height / 2);
+        this.battleField = this.add.container(battleFieldX, battleFieldY);
         
         // 创建8个格子（双方各4个位置：年月日时柱）
         const { GRID_SIZE, GRID_SPACING, PILLAR_NAMES } = GAME_CONFIG;
@@ -654,6 +837,23 @@ export class LZoreGameScene extends Phaser.Scene {
             });
             label.setOrigin(0.5);
             this.battleField.add(label);
+            
+            // 添加对手柱位五行信息
+            const opponentPillar = this.getOpponentPillarByIndex(col);
+            const opponentPillarInfo = getBaZiPillarInfo(opponentPillar.gan, opponentPillar.zhi);
+            
+            const opponentElementText = this.add.text(x, y + 50, opponentPillarInfo.displayText, {
+                fontSize: '10px',
+                color: '#ff00ff',
+                fontFamily: 'monospace',
+                align: 'center'
+            });
+            opponentElementText.setOrigin(0.5);
+            this.battleField.add(opponentElementText);
+            
+            // 添加对手五行能量指示器
+            const opponentIndicators = this.createPillarElementIndicators(x, y - 20, opponentPillarInfo, 'opponent');
+            this.battleField.add(opponentIndicators);
             
             // 添加数字化标识
             const digitalId = this.add.text(x - 35, y - 35, `[${col}]`, {
@@ -698,6 +898,23 @@ export class LZoreGameScene extends Phaser.Scene {
             label.setOrigin(0.5);
             this.battleField.add(label);
             
+            // 添加玩家柱位五行信息
+            const playerPillar = this.getPlayerPillarByIndex(col);
+            const playerPillarInfo = getBaZiPillarInfo(playerPillar.gan, playerPillar.zhi);
+            
+            const playerElementText = this.add.text(x, y - 50, playerPillarInfo.displayText, {
+                fontSize: '10px',
+                color: '#00ffff',
+                fontFamily: 'monospace',
+                align: 'center'
+            });
+            playerElementText.setOrigin(0.5);
+            this.battleField.add(playerElementText);
+            
+            // 添加玩家五行能量指示器
+            const playerIndicators = this.createPillarElementIndicators(x, y + 20, playerPillarInfo, 'player');
+            this.battleField.add(playerIndicators);
+            
             // 添加数字化标识
             const digitalId = this.add.text(x - 35, y + 35, `[${col + 4}]`, {
                 fontSize: '10px',
@@ -710,39 +927,57 @@ export class LZoreGameScene extends Phaser.Scene {
     }
 
     /**
-     * 创建玩家手牌区域 - 赛博朋克风格
+     * 创建玩家手牌区域 - 赛博朋克风格，适应全屏布局，优化卡牌展示
      */
     private createPlayerHandArea() {
         const { width, height } = this.scale;
         this.playerHand = this.add.group();
         
-        // 创建赛博朋克风格手牌区域
-        this.createCyberpunkPanel(50, height - 150, width - 100, 130, 0x00ffff);
+        // 手牌区域位置 - 精确优化为能展示99%卡面
+        const leftPanelWidth = 340;
+        const rightPanelWidth = 220;
+        const handAreaWidth = width - leftPanelWidth - rightPanelWidth;
+        // 卡牌高度180px，99%显示需要178px，加上边距和标签，总高度198px
+        const handAreaHeight = 198;
+        const handAreaX = leftPanelWidth;
+        const handAreaY = height - handAreaHeight - 18; // 精确间距，确保99%显示
         
-        // 添加手牌区域标签 - 数字化效果
-        const handLabel = this.add.text(width / 2, height - 140, '>>> 手牌区域 <<<', {
-            fontSize: '18px',
+        // 创建赛博朋克风格手牌区域 - 极度透明，几乎不遮挡卡牌
+        this.createCyberpunkPanel(handAreaX, handAreaY, handAreaWidth, handAreaHeight, 0x00ffff, 0.08);
+        
+        // 添加手牌区域标签 - 精简版，放在最顶部
+        const handLabel = this.add.text(handAreaX + handAreaWidth / 2, handAreaY + 12, '>>> 手牌区域 <<<', {
+            fontSize: '14px',
             color: '#00ffff',
             fontFamily: 'monospace'
         });
         handLabel.setOrigin(0.5);
+        handLabel.setAlpha(0.7); // 降低透明度，减少视觉干扰
         
-        // 添加连接线装饰
-        this.createHandAreaDecorations(60, height - 135, width - 120, 0x00ffff);
+        // 添加连接线装饰 - 放在顶部，极简化
+        this.createHandAreaDecorations(handAreaX + 20, handAreaY + 25, handAreaWidth - 40, 0x00ffff);
     }
 
     /**
-     * 创建对手手牌区域 - 赛博朋克风格
+     * 创建对手手牌区域 - 赛博朋克风格，适应全屏布局
      */
     private createOpponentHandArea() {
-        const { width } = this.scale;
+        const { width, height } = this.scale;
         this.opponentHand = this.add.group();
         
+        // 对手手牌区域位置 - 顶部，React UI状态栏不遮挡
+        const leftPanelWidth = 340;
+        const rightPanelWidth = 220;
+        const handAreaWidth = width - leftPanelWidth - rightPanelWidth;
+        const handAreaHeight = 140;
+        const handAreaX = leftPanelWidth;
+        const handAreaY = 20; // 减少顶部间距，React UI状态栏很小
+        
         // 创建赛博朋克风格对手手牌区域
-        this.createCyberpunkPanel(50, 20, width - 100, 130, 0xff00ff);
+        this.createCyberpunkPanel(handAreaX, handAreaY, handAreaWidth, handAreaHeight, 0xff00ff, 0.3);
         
         // 添加对手手牌区域标签 - 数字化效果
-        const opponentLabel = this.add.text(width / 2, 30, '>>> 对手手牌区域 <<<', {
+        const opponentLabel = this.add.text(handAreaX + handAreaWidth / 2, handAreaY + 20, '>>> 对手手牌区域 <<<', {
             fontSize: '18px',
             color: '#ff00ff',
             fontFamily: 'monospace'
@@ -750,7 +985,7 @@ export class LZoreGameScene extends Phaser.Scene {
         opponentLabel.setOrigin(0.5);
         
         // 添加连接线装饰
-        this.createHandAreaDecorations(60, 45, width - 120, 0xff00ff);
+        this.createHandAreaDecorations(handAreaX + 20, handAreaY + 35, handAreaWidth - 40, 0xff00ff);
     }
 
     /**
@@ -758,50 +993,51 @@ export class LZoreGameScene extends Phaser.Scene {
      */
     private createHandAreaDecorations(x: number, y: number, width: number, color: number) {
         const decorGraphics = this.add.graphics();
-        decorGraphics.lineStyle(1, color, 0.6);
+        decorGraphics.lineStyle(1, color, 0.3); // 降低线条透明度
         
-        // 绘制连接线网格
-        const lineCount = 5;
+        // 绘制连接线网格 - 减少数量
+        const lineCount = 3; // 从5减少到3
         const spacing = width / lineCount;
         
         for (let i = 0; i <= lineCount; i++) {
             const lineX = x + i * spacing;
             decorGraphics.moveTo(lineX, y);
-            decorGraphics.lineTo(lineX, y + 10);
+            decorGraphics.lineTo(lineX, y + 8); // 缩短线条长度
             
-            // 每隔一条线添加节点
+            // 每隔一条线添加节点 - 更小更透明
             if (i % 2 === 0) {
-                decorGraphics.fillStyle(color, 0.8);
-                decorGraphics.fillCircle(lineX, y + 5, 2);
+                decorGraphics.fillStyle(color, 0.4); // 降低节点透明度
+                decorGraphics.fillCircle(lineX, y + 4, 1.5); // 缩小节点大小
             }
         }
         
         decorGraphics.strokePath();
+        decorGraphics.setAlpha(0.6); // 整体装饰透明度
         
-        // 添加数据流动画
-        this.createDataFlowAnimation(x, y + 5, width, color);
+        // 添加数据流动画 - 更轻微
+        this.createDataFlowAnimation(x, y + 4, width, color);
     }
 
     /**
      * 创建数据流动画
      */
     private createDataFlowAnimation(x: number, y: number, width: number, color: number) {
-        const dataParticle = this.add.circle(x, y, 1, color, 0.8);
+        const dataParticle = this.add.circle(x, y, 0.8, color, 0.4); // 更小，更透明
         
         this.tweens.add({
             targets: dataParticle,
             x: x + width,
-            duration: 2000,
+            duration: 3000, // 更慢的动画，减少干扰
             ease: 'Linear',
             repeat: -1,
             onRepeat: () => {
                 dataParticle.x = x;
-                dataParticle.setAlpha(0.8);
+                dataParticle.setAlpha(0.4);
             },
             onUpdate: (tween: Phaser.Tweens.Tween) => {
-                // 创建尾迹效果
+                // 创建尾迹效果 - 更轻微
                 const progress = tween.progress;
-                dataParticle.setAlpha(0.8 * (1 - progress * 0.5));
+                dataParticle.setAlpha(0.4 * (1 - progress * 0.7)); // 更快淡出
             }
         });
     }
@@ -845,9 +1081,15 @@ export class LZoreGameScene extends Phaser.Scene {
             this.highlightDropZones(false);
         });
 
-        // 放置到区域
+        // 放置到区域 - 即时系统版本
         this.input.on('drop', (pointer: Phaser.Input.Pointer, gameObject: Phaser.GameObjects.Container, dropZone: Phaser.GameObjects.Zone) => {
             if (gameObject.getData('placed') || gameObject.getData('opponent')) {
+                return;
+            }
+            
+            // 检查是否可以使用卡牌（冷却检查）
+            if (!this.gameState.canPlayerUseCards) {
+                this.showMessage('🚫 冷却中，无法使用卡牌！', 'warning');
                 return;
             }
             
@@ -860,6 +1102,13 @@ export class LZoreGameScene extends Phaser.Scene {
                 if (this.gameState.battleFieldPositions[position]) {
                     this.showMessage('该位置已被占用！', 'warning');
                     return;
+                }
+                
+                // 🎯 获得优先权 - 先打出卡牌获得使用神煞的权利
+                if (this.gameState.priorityHolder === 'none') {
+                    this.gameState.priorityHolder = 'player';
+                    this.gameState.activePlayer = 'player';
+                    this.showMessage('🏆 获得优先权！你可以使用神煞能力！', 'success');
                 }
                 
                 // 计算世界坐标
@@ -882,13 +1131,13 @@ export class LZoreGameScene extends Phaser.Scene {
                 // 从手牌组中移除
                 this.playerHand.remove(gameObject);
                 
-                // 检查凶神自动上场
                 const cardData = gameObject.getData('cardData');
+                this.showMessage(`✨ 已放置 ${cardData.name} 到 ${this.getPillarName(position)}`, 'success');
+                
+                // 检查凶神自动上场
                 if (cardData.type === 'inauspicious') {
                     this.triggerAutoPlace(gameObject);
                 }
-                
-                this.showMessage(`已放置 ${cardData.name} 到 ${this.getPillarName(position)}`, 'success');
             }
         });
     }
@@ -995,81 +1244,175 @@ export class LZoreGameScene extends Phaser.Scene {
     }
 
     /**
-     * 创建赛博朋克风格游戏UI
+     * 创建全屏优化的赛博朋克风格游戏UI
      */
     private createGameUI() {
         const { width, height } = this.scale;
         
-        // 创建右上角状态面板 - 赛博朋克风格
-        this.createCyberpunkPanel(width - 300, 10, 280, 160, 0x00ffff);
+        // 移除重复的顶部状态栏，使用React UI替代
+        // this.createTopStatusBar(width, height);
         
-        // 回合数显示 - 带数字化效果
-        this.uiTexts.turnText = this.add.text(width - 290, 30, `>>> 回合: ${this.gameState.currentTurn} <<<`, {
-            fontSize: '16px',
+        // 左侧信息面板 - 垂直布局，显示八字和五行
+        this.createLeftInfoPanel(width, height);
+        
+        // 右侧操作面板 - 垂直布局，显示操作按钮
+        this.createRightActionPanel(width, height);
+        
+        // 底部指南栏 - 简化显示，不遮挡手牌
+        this.createBottomGuideBar(width, height);
+    }
+
+    // createTopStatusBar方法已被移除，使用React UI替代
+
+    /**
+     * 创建左侧信息面板
+     */
+    private createLeftInfoPanel(width: number, height: number) {
+        const panelWidth = 320;
+        const panelHeight = height * 0.6; // 占屏幕高度60%
+        const panelY = (height - panelHeight) / 2; // 垂直居中
+        
+        // 左侧信息面板 - 半透明
+        this.createCyberpunkPanel(10, panelY, panelWidth, panelHeight, 0x00ffff, 0.25);
+        
+        const startY = panelY + 30;
+        
+        // 玩家信息区域
+        this.add.text(20, startY, '>>> 玩家信息 <<<', {
+            fontSize: '14px',
             color: '#00ffff',
             fontFamily: 'monospace'
         });
         
-        // 玩家八字显示 - 霓虹青色
-        this.uiTexts.playerLifeText = this.add.text(width - 290, 55, '⚡玩家八字: 甲子 乙丑 丙寅 丁卯', {
-            fontSize: '12px',
+        // 玩家八字显示 - 分行显示更清晰
+        const playerBaZiText = getFullBaZiText(this.gameState.playerBazi);
+        this.uiTexts.playerLifeText = this.add.text(20, startY + 25, `⚡八字: ${playerBaZiText}`, {
+            fontSize: '11px',
             color: '#00ffff',
-            fontFamily: 'monospace'
+            fontFamily: 'monospace',
+            wordWrap: { width: panelWidth - 40 }
         });
         
-        // 对手八字显示 - 霓虹粉色
-        this.uiTexts.opponentLifeText = this.add.text(width - 290, 75, '❌对手八字: 戊辰 己巳 庚午 辛未', {
-            fontSize: '12px',
+        // 对手信息区域
+        this.add.text(20, startY + 80, '>>> 对手信息 <<<', {
+            fontSize: '14px',
             color: '#ff00ff',
             fontFamily: 'monospace'
         });
         
-        // 阶段显示 - 霓虹黄色
-        this.uiTexts.phaseText = this.add.text(width - 290, 100, `⏰阶段: ${this.gameState.gamePhase}`, {
+        // 对手八字显示
+        const opponentBaZiText = getFullBaZiText(this.gameState.opponentBazi);
+        this.uiTexts.opponentLifeText = this.add.text(20, startY + 105, `❌八字: ${opponentBaZiText}`, {
+            fontSize: '11px',
+            color: '#ff00ff',
+            fontFamily: 'monospace',
+            wordWrap: { width: panelWidth - 40 }
+        });
+        
+        // 五行能量对比
+        this.add.text(20, startY + 160, '>>> 五行能量对比 <<<', {
             fontSize: '14px',
             color: '#ffff00',
             fontFamily: 'monospace'
         });
         
-        // 添加状态面板装饰
-        this.createStatusDecorations(width - 290, 120);
+        this.createElementEnergyDisplay(30, startY + 190);
         
-        // 创建左下角操作面板 - 赛博朋克风格
-        this.createCyberpunkPanel(10, height - 170, 350, 100, 0xff00ff);
+        // 添加状态指示器
+        this.createStatusDecorations(30, startY + 280);
+    }
+
+    /**
+     * 创建右侧操作面板
+     */
+    private createRightActionPanel(width: number, height: number) {
+        const panelWidth = 200;
+        const panelHeight = height * 0.5; // 占屏幕高度50%
+        const panelX = width - panelWidth - 10;
+        const panelY = (height - panelHeight) / 2; // 垂直居中
         
-        // 操作按钮 - 霓虹风格
-        this.createCyberpunkButton(30, height - 150, '结束回合', 0x00ff00, () => this.endTurn());
-        this.createCyberpunkButton(130, height - 150, '使用神煞', 0x9900ff, () => this.useSpecialAbility());
-        this.createCyberpunkButton(230, height - 150, '抽取卡牌', 0x0099ff, () => this.drawCard());
+        // 右侧操作面板 - 半透明
+        this.createCyberpunkPanel(panelX, panelY, panelWidth, panelHeight, 0xff00ff, 0.25);
         
-        // 操作指南文本 - 数字化风格
-        this.add.text(30, height - 105, '>>> 基础操作 <<<', {
+        const centerX = panelX + panelWidth / 2;
+        const startY = panelY + 40;
+        
+        // 操作面板标题
+        this.add.text(centerX, panelY + 20, '>>> 操作面板 <<<', {
+            fontSize: '14px',
+            color: '#ff00ff',
+            fontFamily: 'monospace'
+        }).setOrigin(0.5);
+        
+        // 即时系统操作按钮
+        this.createCyberpunkButton(centerX, startY + 30, '手动抽牌', 0x0099ff, () => this.drawCard());
+        this.createCyberpunkButton(centerX, startY + 80, '使用神煞', 0x9900ff, () => this.useSpecialAbility());
+        this.createCyberpunkButton(centerX, startY + 130, '释放优先权', 0x00ff00, () => this.endTurn());
+        
+        // 即时系统快捷键
+        this.add.text(centerX, startY + 180, '即时操作:', {
             fontSize: '12px',
-            color: '#00ffff',
+            color: '#ffffff',
             fontFamily: 'monospace'
-        });
+        }).setOrigin(0.5);
         
-        this.add.text(30, height - 90, '• 拖拽卡牌: 将手牌拖入对应柱位放置', {
+        this.add.text(centerX, startY + 200, 'D - 手动抽牌', {
             fontSize: '10px',
             color: '#00ff41',
             fontFamily: 'monospace'
-        });
+        }).setOrigin(0.5);
         
-        this.add.text(30, height - 78, '• 悬浮激活: 鼠标悬浮已放置卡牌显示激活图标', {
+        this.add.text(centerX, startY + 215, 'S - 使用神煞', {
             fontSize: '10px',
             color: '#00ff41',
             fontFamily: 'monospace'
+        }).setOrigin(0.5);
+        
+        this.add.text(centerX, startY + 230, 'E - 释放优先权', {
+            fontSize: '10px',
+            color: '#00ff41',
+            fontFamily: 'monospace'
+        }).setOrigin(0.5);
+    }
+
+    /**
+     * 创建底部指南栏 - 极简化设计，确保99%手牌显示
+     */
+    private createBottomGuideBar(width: number, height: number) {
+        const barHeight = 18;
+        const barY = height - barHeight;
+        
+        // 底部指南栏 - 极度透明，最小高度
+        this.createCyberpunkPanel(0, barY, width, barHeight, 0x9900ff, 0.05);
+        
+        // 操作指南 - 即时系统版本
+        const guides = [
+            '🏆抢先打出获得优先权',
+            '⚡冷却期无法操作', 
+            '🔄释放优先权重竞争',
+            '⏰每10s一个周期'
+        ];
+        
+        const spacing = (width - 30) / guides.length;
+        guides.forEach((guide, index) => {
+            const guideText = this.add.text(15 + index * spacing, barY + 9, guide, {
+                fontSize: '9px',
+                color: '#00ff41',
+                fontFamily: 'monospace'
+            });
+            guideText.setOrigin(0, 0.5);
+            guideText.setAlpha(0.8); // 设置透明度
         });
     }
 
     /**
      * 创建赛博朋克风格面板
      */
-    private createCyberpunkPanel(x: number, y: number, width: number, height: number, accentColor: number) {
+    private createCyberpunkPanel(x: number, y: number, width: number, height: number, accentColor: number, alpha: number = 0.85) {
         const panel = this.add.graphics();
         
-        // 主体背景 - 深色半透明
-        panel.fillStyle(0x0f0f23, 0.85);
+        // 主体背景 - 深色半透明，使用传入的透明度
+        panel.fillStyle(0x0f0f23, alpha);
         panel.fillRoundedRect(x, y, width, height, 8);
         
         // 多层霓虹边框
@@ -1176,8 +1519,166 @@ export class LZoreGameScene extends Phaser.Scene {
         
         button.on('pointerdown', onClick);
     }
-    
 
+    /**
+     * 创建五行能量显示
+     */
+    private createElementEnergyDisplay(x: number, y: number) {
+        // 统计玩家和对手的五行分布
+        const playerElements = this.countBaZiElements(this.gameState.playerBazi);
+        const opponentElements = this.countBaZiElements(this.gameState.opponentBazi);
+        
+        const elements = ['木', '火', '土', '金', '水'];
+        const elementColors = ['#00ff41', '#ff0040', '#ffaa00', '#ffffff', '#00ffff'];
+        
+        elements.forEach((element, index) => {
+            const elementX = x + index * 45;
+            
+            // 五行名称
+            const elementLabel = this.add.text(elementX, y, element, {
+                fontSize: '10px',
+                color: elementColors[index],
+                fontFamily: 'monospace'
+            });
+            elementLabel.setOrigin(0.5);
+            
+            // 玩家能量条
+            const playerCount = playerElements[element] || 0;
+            this.createEnergyBar(elementX, y + 12, playerCount, elementColors[index], 'player');
+            
+            // 对手能量条
+            const opponentCount = opponentElements[element] || 0;
+            this.createEnergyBar(elementX, y + 18, opponentCount, elementColors[index], 'opponent');
+        });
+        
+        // 添加图例
+        this.add.text(x - 20, y + 30, 'P:', {
+            fontSize: '8px',
+            color: '#00ffff',
+            fontFamily: 'monospace'
+        });
+        
+        this.add.text(x - 20, y + 38, 'O:', {
+            fontSize: '8px',
+            color: '#ff00ff',
+            fontFamily: 'monospace'
+        });
+    }
+
+    /**
+     * 统计八字的五行分布
+     */
+    private countBaZiElements(baZi: any): { [element: string]: number } {
+        const elementCount: { [element: string]: number } = {};
+        
+        // 统计四柱的天干地支五行
+        const pillars = [baZi.year, baZi.month, baZi.day, baZi.hour];
+        
+        pillars.forEach(pillar => {
+            const ganInfo = getBaZiPillarInfo(pillar.gan, pillar.zhi);
+            
+            // 统计天干五行
+            elementCount[ganInfo.ganElement] = (elementCount[ganInfo.ganElement] || 0) + 1;
+            
+            // 统计地支五行
+            elementCount[ganInfo.zhiElement] = (elementCount[ganInfo.zhiElement] || 0) + 1;
+        });
+        
+        return elementCount;
+    }
+
+    /**
+     * 创建能量条
+     */
+    private createEnergyBar(x: number, y: number, count: number, color: string, type: 'player' | 'opponent') {
+        const maxWidth = 30;
+        const maxCount = 4; // 最大可能的单一五行数量
+        const width = Math.min((count / maxCount) * maxWidth, maxWidth);
+        
+        if (count > 0) {
+            const bar = this.add.graphics();
+            bar.fillStyle(parseInt(color.replace('#', '0x'), 16), type === 'player' ? 0.7 : 0.5);
+            bar.fillRect(x - 15, y, width, 4);
+            
+            // 边框
+            bar.lineStyle(1, parseInt(color.replace('#', '0x'), 16), 0.8);
+            bar.strokeRect(x - 15, y, maxWidth, 4);
+            
+            // 显示数量
+            if (count > 0) {
+                const countText = this.add.text(x + 18, y + 2, count.toString(), {
+                    fontSize: '6px',
+                    color: color,
+                    fontFamily: 'monospace'
+                });
+                countText.setOrigin(0.5);
+            }
+        }
+    }
+
+    /**
+     * 根据索引获取玩家柱位信息
+     */
+    private getPlayerPillarByIndex(index: number): { gan: string; zhi: string } {
+        const pillars = [
+            this.gameState.playerBazi.year,
+            this.gameState.playerBazi.month,
+            this.gameState.playerBazi.day,
+            this.gameState.playerBazi.hour
+        ];
+        return pillars[index] || { gan: '甲', zhi: '子' };
+    }
+
+    /**
+     * 根据索引获取对手柱位信息
+     */
+    private getOpponentPillarByIndex(index: number): { gan: string; zhi: string } {
+        const pillars = [
+            this.gameState.opponentBazi.year,
+            this.gameState.opponentBazi.month,
+            this.gameState.opponentBazi.day,
+            this.gameState.opponentBazi.hour
+        ];
+        return pillars[index] || { gan: '戊', zhi: '辰' };
+    }
+
+    /**
+     * 创建柱位五行指示器
+     */
+    private createPillarElementIndicators(x: number, y: number, pillarInfo: any, type: 'player' | 'opponent'): Phaser.GameObjects.Container {
+        const container = this.add.container(x, y);
+        
+        // 天干五行指示器
+        const ganColor = parseInt(pillarInfo.ganColor.replace('#', '0x'), 16);
+        const ganIndicator = this.add.circle(-8, 0, 4, ganColor, 0.8);
+        container.add(ganIndicator);
+        
+        // 地支五行指示器
+        const zhiColor = parseInt(pillarInfo.zhiColor.replace('#', '0x'), 16);
+        const zhiIndicator = this.add.circle(8, 0, 4, zhiColor, 0.8);
+        container.add(zhiIndicator);
+        
+        // 连接线
+        const connection = this.add.graphics();
+        connection.lineStyle(1, type === 'player' ? 0x00ffff : 0xff00ff, 0.5);
+        connection.moveTo(-4, 0);
+        connection.lineTo(4, 0);
+        connection.strokePath();
+        container.add(connection);
+        
+        // 添加脉动动画
+        this.tweens.add({
+            targets: [ganIndicator, zhiIndicator],
+            scaleX: 1.2,
+            scaleY: 1.2,
+            duration: 2000,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
+        
+        return container;
+    }
 
     /**
      * 创建粒子效果
@@ -1213,11 +1714,22 @@ export class LZoreGameScene extends Phaser.Scene {
     }
 
     /**
-     * 发初始手牌
+     * 发初始手牌 - 适应全屏布局
      */
     private dealInitialCards() {
         const { INITIAL_HAND_SIZE } = GAME_CONFIG;
-        const { height } = this.scale;
+        const { width, height } = this.scale;
+        
+        // 计算手牌区域位置
+        const leftPanelWidth = 340;
+        const rightPanelWidth = 220;
+        const handAreaWidth = width - leftPanelWidth - rightPanelWidth;
+        const handAreaX = leftPanelWidth;
+        
+        // 玩家手牌位置 - 优化显示99%卡面
+        const playerHandY = height - 108; // 精确调整让卡牌99%可见（卡牌高180px，只遮挡1.8px）
+        const cardSpacing = Math.min(110, (handAreaWidth - 40) / INITIAL_HAND_SIZE); // 自适应卡牌间距
+        const startX = handAreaX + (handAreaWidth - (INITIAL_HAND_SIZE - 1) * cardSpacing) / 2;
         
         // 为玩家发初始手牌
         for (let i = 0; i < INITIAL_HAND_SIZE; i++) {
@@ -1225,12 +1737,15 @@ export class LZoreGameScene extends Phaser.Scene {
             const cardCopy = { ...randomCard, id: `${randomCard.id}_${Date.now()}_${i}` };
             
             const cardContainer = this.createCard(cardCopy, 
-                100 + i * 110, 
-                height - 85
+                startX + i * cardSpacing, 
+                playerHandY
             );
             
             this.playerHand.add(cardContainer);
         }
+        
+        // 对手手牌位置 - 匹配新的对手手牌区域
+        const opponentHandY = 90; // 在对手手牌区域中央，与新区域匹配
         
         // 为对手发初始手牌（背面朝上）
         for (let i = 0; i < INITIAL_HAND_SIZE; i++) {
@@ -1239,12 +1754,15 @@ export class LZoreGameScene extends Phaser.Scene {
             this.opponentCards.push(cardCopy);
             
             const cardContainer = this.createOpponentCard(cardCopy, 
-                100 + i * 110, 
-                85
+                startX + i * cardSpacing, 
+                opponentHandY
             );
             
             this.opponentHand.add(cardContainer);
         }
+        
+        // 更新UI状态
+        this.updateGameStateUI();
     }
     
     /**
@@ -1515,14 +2033,35 @@ export class LZoreGameScene extends Phaser.Scene {
     }
     
     /**
-     * 激活卡牌能力
+     * 激活卡牌能力 - 即时系统版本
      */
     private activateCardAbility(cardContainer: Phaser.GameObjects.Container) {
+        // 再次检查权限
+        if (!this.gameState.canPlayerUseCards || this.gameState.activePlayer !== 'player') {
+            this.showMessage('❌ 无权限使用神煞能力！', 'warning');
+            return;
+        }
+        
         const cardData = cardContainer.getData('cardData');
-        this.showMessage(`激活 ${cardData.name} 的神煞能力！`, 'success');
+        this.showMessage(`⚡ 激活 ${cardData.name} 的神煞能力！`, 'success');
+        
+        // 进入冷却期
+        this.startPlayerCooldown();
         
         // 打开神煞效果选择界面
         this.openEffectPanel(cardData, cardContainer);
+    }
+    
+    /**
+     * 开始玩家冷却期
+     */
+    private startPlayerCooldown() {
+        this.gameState.playerCooldownRemaining = GAME_CONFIG.COOLDOWN_DURATION;
+        this.gameState.canPlayerUseCards = false;
+        this.gameState.activePlayer = 'none';
+        this.gameState.priorityHolder = 'none';
+        
+        this.showMessage(`🕐 进入${GAME_CONFIG.COOLDOWN_DURATION}秒冷却期，无法使用卡牌！`, 'warning');
     }
     
     /**
@@ -1532,6 +2071,12 @@ export class LZoreGameScene extends Phaser.Scene {
         if (this.isEffectPanelOpen) return;
         
         this.isEffectPanelOpen = true;
+        
+        // 发送事件给React UI显示效果面板
+        this.events.emit('effectPanelOpen', {
+            cardData: cardData,
+            sourceCard: sourceCard
+        });
         const { width, height } = this.scale;
         
         // 创建面板背景
@@ -1721,29 +2266,28 @@ export class LZoreGameScene extends Phaser.Scene {
             this.effectPanel = null;
         }
         this.isEffectPanelOpen = false;
+        
+        // 发送关闭事件给React UI
+        this.events.emit('effectPanelClose');
     }
 
     /**
-     * 结束回合
+     * 释放优先权 - 即时系统中替代结束回合
      */
     public endTurn() {
-        if (this.isOpponentTurn) return;
-        
-        this.gameState.currentTurn++;
-        this.gameState.currentPlayer = 'opponent';
-        this.isOpponentTurn = true;
-        
-        // 更新UI
-        if (this.uiTexts.turnText) {
-            this.uiTexts.turnText.setText(`回合: ${this.gameState.currentTurn}`);
+        if (!this.gameState.canPlayerUseCards) {
+            this.showMessage('冷却中，无法操作！', 'warning');
+            return;
         }
         
-        this.showMessage('对手回合开始', 'warning');
+        // 释放优先权
+        this.gameState.activePlayer = 'none';
+        this.gameState.priorityHolder = 'none';
         
-        // 启动AI回合
-        this.time.delayedCall(1000, () => {
-            this.executeOpponentTurn();
-        });
+        // 更新React UI状态
+        this.updateGameStateUI();
+        
+        this.showMessage('🔄 已释放优先权，双方可以重新竞争！', 'success');
     }
     
     /**
@@ -1767,10 +2311,14 @@ export class LZoreGameScene extends Phaser.Scene {
                 actionIndex++;
                 this.time.delayedCall(1500, executeNextAction);
             } else {
-                // 对手回合结束
-                this.gameState.currentPlayer = 'player';
-                this.isOpponentTurn = false;
-                this.showMessage('你的回合开始', 'success');
+                // 对手动作完成，释放优先权
+                this.gameState.activePlayer = 'none';
+                this.gameState.priorityHolder = 'none';
+                
+                // 更新React UI状态
+                this.updateGameStateUI();
+                
+                this.showMessage('对手完成动作，优先权重置', 'success');
             }
         };
         
@@ -1799,19 +2347,30 @@ export class LZoreGameScene extends Phaser.Scene {
     }
 
     /**
-     * 使用特殊能力
+     * 使用特殊能力 - 即时系统版本
      */
     public useSpecialAbility() {
+        // 检查是否可以使用神煞（冷却和优先权检查）
+        if (!this.gameState.canPlayerUseCards) {
+            this.showMessage('🚫 冷却中，无法使用神煞能力！', 'warning');
+            return;
+        }
+        
+        if (this.gameState.activePlayer !== 'player') {
+            this.showMessage('❌ 没有优先权，无法使用神煞！先打出卡牌获得优先权！', 'warning');
+            return;
+        }
+        
         if (this.placedCards.length === 0) {
             this.showMessage('场上没有可激活的神煞卡牌！', 'warning');
             return;
         }
         
-        this.showMessage('请悬浮卡牌并点击激活图标来发动神煞能力', 'success');
+        this.showMessage('⚡ 请悬浮卡牌并点击激活图标来发动神煞能力', 'success');
     }
 
     /**
-     * 抽取卡牌
+     * 抽取卡牌 - 适应全屏布局
      */
     public drawCard(): Phaser.GameObjects.Container | null {
         if (this.playerHand.children.entries.length >= 7) {
@@ -1819,16 +2378,107 @@ export class LZoreGameScene extends Phaser.Scene {
             return null;
         }
         
-        const { height } = this.scale;
+        const { width, height } = this.scale;
         const randomCard = this.cardDatabase[Math.floor(Math.random() * this.cardDatabase.length)];
         const cardCopy = { ...randomCard, id: `${randomCard.id}_${Date.now()}_draw` };
         
-        const newX = 100 + this.playerHand.children.entries.length * 110;
-        const cardContainer = this.createCard(cardCopy, newX, height - 85);
+        // 计算新卡牌的位置 - 适应全屏布局，优化卡牌显示
+        const leftPanelWidth = 340;
+        const rightPanelWidth = 220;
+        const handAreaWidth = width - leftPanelWidth - rightPanelWidth;
+        const handAreaX = leftPanelWidth;
+        const playerHandY = height - 108; // 与dealInitialCards保持一致，99%卡面显示
+        
+        const currentCardCount = this.playerHand.children.entries.length;
+        const cardSpacing = Math.min(110, (handAreaWidth - 40) / (currentCardCount + 1));
+        const newX = handAreaX + (currentCardCount * cardSpacing) + (handAreaWidth - currentCardCount * cardSpacing) / 2;
+        
+        const cardContainer = this.createCard(cardCopy, newX, playerHandY);
         
         this.playerHand.add(cardContainer);
         this.showMessage(`抽取了 ${cardCopy.name}！`, 'success');
         
+        // 更新React UI状态
+        this.updateGameStateUI();
+        
         return cardContainer;
+    }
+    
+    /**
+     * 对手抽取卡牌 - 即时系统
+     */
+    private drawOpponentCard(): Phaser.GameObjects.Container | null {
+        if (this.opponentHand.children.entries.length >= 7) {
+            return null;
+        }
+        
+        const { width, height } = this.scale;
+        const randomCard = this.cardDatabase[Math.floor(Math.random() * this.cardDatabase.length)];
+        const cardCopy = { ...randomCard, id: `opponent_${randomCard.id}_${Date.now()}_draw` };
+        this.opponentCards.push(cardCopy);
+        
+        // 计算对手新卡牌位置
+        const leftPanelWidth = 340;
+        const rightPanelWidth = 220;
+        const handAreaWidth = width - leftPanelWidth - rightPanelWidth;
+        const handAreaX = leftPanelWidth;
+        const opponentHandY = 90;
+        
+        const currentCardCount = this.opponentHand.children.entries.length;
+        const cardSpacing = Math.min(110, (handAreaWidth - 40) / (currentCardCount + 1));
+        const newX = handAreaX + (currentCardCount * cardSpacing) + (handAreaWidth - currentCardCount * cardSpacing) / 2;
+        
+        const cardContainer = this.createOpponentCard(cardCopy, newX, opponentHandY);
+        this.opponentHand.add(cardContainer);
+        
+        return cardContainer;
+    }
+
+    /**
+     * 设置键盘快捷键控制
+     */
+    private setupKeyboardControls() {
+        // 创建键盘输入
+        const keyD = this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.D);
+        const keyS = this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.S);
+        const keyE = this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.E);
+        const keyESC = this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
+        
+        // D键 - 抽取卡牌
+        keyD?.on('down', () => {
+            if (!this.isOpponentTurn && !this.isEffectPanelOpen) {
+                this.drawCard();
+                this.showMessage('快捷键: D - 抽取卡牌', 'success');
+            }
+        });
+        
+        // S键 - 使用神煞
+        keyS?.on('down', () => {
+            if (!this.isOpponentTurn && !this.isEffectPanelOpen) {
+                this.useSpecialAbility();
+                this.showMessage('快捷键: S - 使用神煞', 'success');
+            }
+        });
+        
+        // E键 - 结束回合
+        keyE?.on('down', () => {
+            if (!this.isOpponentTurn && !this.isEffectPanelOpen) {
+                this.endTurn();
+                this.showMessage('快捷键: E - 结束回合', 'success');
+            }
+        });
+        
+        // ESC键 - 关闭面板
+        keyESC?.on('down', () => {
+            if (this.isEffectPanelOpen) {
+                this.closeEffectPanel();
+                this.showMessage('已关闭效果面板', 'warning');
+            }
+        });
+        
+        // 显示即时系统帮助
+        this.time.delayedCall(3000, () => {
+            this.showMessage('💡 即时系统: D手动抽牌 | S使用神煞 | E释放优先权 | 拖拽卡牌抢优先权', 'success');
+        });
     }
 } 

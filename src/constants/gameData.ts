@@ -57,11 +57,22 @@ export const CARD_DATABASE: LZoreCard[] = [
 ];
 
 /**
- * 初始游戏状态
+ * 初始游戏状态 - 即时卡牌系统
  */
 export const INITIAL_GAME_STATE: GameState = {
-    currentTurn: 1,
-    currentPlayer: 'player',
+    // 实时系统
+    gameTime: 0,
+    currentCycle: 1,
+    
+    // 冷却系统
+    playerCooldownRemaining: 0,
+    opponentCooldownRemaining: 0,
+    
+    // 优先权系统
+    activePlayer: 'none',
+    priorityHolder: 'none',
+    
+    // 原有系统
     playerBazi: {
         year: { gan: '甲', zhi: '子' },
         month: { gan: '乙', zhi: '丑' },
@@ -77,7 +88,11 @@ export const INITIAL_GAME_STATE: GameState = {
     playerRemainingElements: 8,
     opponentRemainingElements: 8,
     gamePhase: 'preparation',
-    battleFieldPositions: new Array(8).fill(null) // 8个位置，初始为空
+    battleFieldPositions: new Array(8).fill(null), // 8个位置，初始为空
+    
+    // 实时状态
+    canPlayerUseCards: true,
+    canOpponentUseCards: true
 };
 
 /**
@@ -90,7 +105,13 @@ export const GAME_CONFIG = {
     GRID_SPACING: 200,
     INITIAL_HAND_SIZE: 5,
     MAX_ELEMENTS: 8,
-    PILLAR_NAMES: ['年柱', '月柱', '日柱', '时柱']
+    PILLAR_NAMES: ['年柱', '月柱', '日柱', '时柱'],
+    
+    // 即时系统配置
+    CYCLE_DURATION: 10, // 每个周期10秒
+    COOLDOWN_DURATION: 10, // 冷却时间10秒
+    AUTO_DRAW_INTERVAL: 3, // 每3秒自动抽卡
+    PRIORITY_TIMEOUT: 15 // 优先权超时时间15秒
 };
 
 /**

@@ -248,4 +248,85 @@ export class PixelDrawUtils {
             graphics.fillRect(alignedX, alignedY, pixelSize, pixelSize);
         }
     }
+}
+
+/**
+ * 获取天干的五行属性
+ */
+export function getTianGanElement(tianGan: string): string {
+    const tianGanElements: { [key: string]: string } = {
+        '甲': '木', '乙': '木',
+        '丙': '火', '丁': '火', 
+        '戊': '土', '己': '土',
+        '庚': '金', '辛': '金',
+        '壬': '水', '癸': '水'
+    };
+    
+    return tianGanElements[tianGan] || '未知';
+}
+
+/**
+ * 获取地支的五行属性
+ */
+export function getDiZhiElement(diZhi: string): string {
+    const diZhiElements: { [key: string]: string } = {
+        '子': '水', '亥': '水',
+        '寅': '木', '卯': '木',
+        '巳': '火', '午': '火',
+        '申': '金', '酉': '金',
+        '辰': '土', '戌': '土', '丑': '土', '未': '土'
+    };
+    
+    return diZhiElements[diZhi] || '未知';
+}
+
+/**
+ * 获取五行的赛博朋克色彩
+ */
+export function getElementColor(element: string): string {
+    const elementColors: { [key: string]: string } = {
+        '木': '#00ff41',  // 霓虹绿
+        '火': '#ff0040',  // 霓虹红
+        '土': '#ffaa00',  // 霓虹橙
+        '金': '#ffffff',  // 霓虹白
+        '水': '#00ffff'   // 霓虹青
+    };
+    
+    return elementColors[element] || '#ffffff';
+}
+
+/**
+ * 获取八字柱的完整信息（包含五行）
+ */
+export function getBaZiPillarInfo(gan: string, zhi: string): {
+    text: string;
+    ganElement: string;
+    zhiElement: string;
+    ganColor: string;
+    zhiColor: string;
+    displayText: string;
+} {
+    const ganElement = getTianGanElement(gan);
+    const zhiElement = getDiZhiElement(zhi);
+    
+    return {
+        text: `${gan}${zhi}`,
+        ganElement,
+        zhiElement,
+        ganColor: getElementColor(ganElement),
+        zhiColor: getElementColor(zhiElement),
+        displayText: `${gan}${zhi}(${ganElement}${zhiElement})`
+    };
+}
+
+/**
+ * 获取完整的八字显示文本（包含五行）
+ */
+export function getFullBaZiText(baZi: { year: { gan: string; zhi: string }, month: { gan: string; zhi: string }, day: { gan: string; zhi: string }, hour: { gan: string; zhi: string } }): string {
+    const yearInfo = getBaZiPillarInfo(baZi.year.gan, baZi.year.zhi);
+    const monthInfo = getBaZiPillarInfo(baZi.month.gan, baZi.month.zhi);
+    const dayInfo = getBaZiPillarInfo(baZi.day.gan, baZi.day.zhi);
+    const hourInfo = getBaZiPillarInfo(baZi.hour.gan, baZi.hour.zhi);
+    
+    return `${yearInfo.displayText} ${monthInfo.displayText} ${dayInfo.displayText} ${hourInfo.displayText}`;
 } 
