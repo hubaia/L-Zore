@@ -1,10 +1,20 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { LZorePhaserGame } from '../components/LZorePhaserGame';
 
 /**
  * Phaser优化版L-Zore神煞卡牌游戏页面
  */
 export default function PhaserLZorePage() {
+    console.log('📄 PhaserLZorePage 组件渲染');
+    
+    // 使用useCallback稳定回调函数引用，避免重复创建游戏实例
+    const handleGameStateChange = useCallback((state: any) => {
+        console.log('游戏状态变化:', state);
+    }, []);
+
+    const handleCardPlayed = useCallback((card: any, position: number) => {
+        console.log('卡牌放置:', card.name, '位置:', position);
+    }, []);
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-blue-900">
             {/* 移除重复的页面标题栏，使用React UI组件的状态栏 */}
@@ -159,12 +169,8 @@ export default function PhaserLZorePage() {
                 <div className="flex-1 px-4 py-2">
                     <div className="h-full bg-black rounded-xl shadow-2xl overflow-hidden">
                         <LZorePhaserGame
-                            onGameStateChange={(state) => {
-                                console.log('游戏状态变化:', state);
-                            }}
-                            onCardPlayed={(card, position) => {
-                                console.log('卡牌放置:', card.name, '位置:', position);
-                            }}
+                            onGameStateChange={handleGameStateChange}
+                            onCardPlayed={handleCardPlayed}
                         />
                     </div>
                 </div>

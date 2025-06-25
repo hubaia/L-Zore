@@ -39,11 +39,8 @@ app.router(({ history }) => {
   );
 });
 
-// 启动 DVA 应用
+// 启动 DVA 应用（只初始化store和models）
 app.start();
 
-root.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-); 
+// 移除React.StrictMode，避免开发模式下的双重渲染
+root.render(<App />); 

@@ -49,10 +49,15 @@ export interface GameState {
     opponentRemainingElements: number;
     gamePhase: 'preparation' | 'realtime' | 'ended';
     battleFieldPositions: (LZoreCard | null)[]; // 战场位置状态
+    battlefield?: { [position: number]: string }; // 战场占用状态
     
     // 实时状态
     canPlayerUseCards: boolean; // 玩家是否可以使用卡牌
     canOpponentUseCards: boolean; // 对手是否可以使用卡牌
+    
+    // 时停系统
+    isPaused: boolean; // 游戏是否暂停（效果面板打开时时停）
+    pauseReason: string; // 暂停原因
 }
 
 /**

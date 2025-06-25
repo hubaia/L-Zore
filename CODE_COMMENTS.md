@@ -7,7 +7,7 @@
 ## 📁 文件结构和注释覆盖
 
 ### 核心文件
-- `ViteCardGame.tsx` - 主游戏组件 ✅ 已完成详细注释
+- `LZoreGameScene.refactored.ts` - L-Zore神煞卡牌主游戏场景 ✅ 已完成详细注释
 - `GameUI.tsx` - React UI组件 ✅ 已完成详细注释
 
 ## 🎯 注释规范

@@ -92,7 +92,11 @@ export const INITIAL_GAME_STATE: GameState = {
     
     // 实时状态
     canPlayerUseCards: true,
-    canOpponentUseCards: true
+    canOpponentUseCards: true,
+    
+    // 时停系统
+    isPaused: false,
+    pauseReason: ''
 };
 
 /**

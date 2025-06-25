@@ -151,7 +151,7 @@ class LZoreGame {
                 power: 3,
                 rarity: '⭐⭐⭐',
                 description: '自内失之为亡，容易招惹是非',
-                effect: '对已受损目标威力翻倍',
+                effect: '对已受损目标元素翻倍',
                 condition: '水系冲克',
                 pillarPreference: ['hour']
             },
@@ -225,7 +225,7 @@ class LZoreGame {
                 power: 4,
                 rarity: '⭐⭐⭐',
                 description: '刚烈正直勇猛，耿直胸无城府',
-                effect: '无视部分防御，霸道威力',
+                effect: '无视部分防御，霸道元素',
                 condition: '特殊日柱',
                 pillarPreference: ['day']
             },

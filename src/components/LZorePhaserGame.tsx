@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import Phaser from 'phaser';
-import { LZoreGameScene } from '../scenes/LZoreGameScene';
+import { LZoreGameScene } from '../scenes/LZoreGameScene.refactored';
 
 interface LZorePhaserGameProps {
     onGameStateChange?: (state: any) => void;
@@ -17,9 +17,22 @@ export const LZorePhaserGame: React.FC<LZorePhaserGameProps> = ({
 }) => {
     const gameRef = useRef<HTMLDivElement>(null);
     const phaserGameRef = useRef<Phaser.Game | null>(null);
+    
+    console.log('🎮 LZorePhaserGame 组件渲染');
 
     useEffect(() => {
-        if (!gameRef.current) return;
+        console.log('🔄 LZorePhaserGame useEffect 触发');
+        
+        if (!gameRef.current) {
+            console.log('❌ gameRef.current 不存在');
+            return;
+        }
+        
+        // 防止重复创建游戏实例
+        if (phaserGameRef.current) {
+            console.warn('⚠️ 游戏实例已存在，跳过创建。实例ID:', phaserGameRef.current.config);
+            return;
+        }
 
         const config: Phaser.Types.Core.GameConfig = {
             type: Phaser.AUTO,
@@ -53,16 +66,8 @@ export const LZorePhaserGame: React.FC<LZorePhaserGameProps> = ({
         };
 
         try {
+            console.log('🎮 创建新的Phaser游戏实例');
             phaserGameRef.current = new Phaser.Game(config);
-            
-            // 监听场景事件
-            if (phaserGameRef.current.scene && onGameStateChange && onCardPlayed) {
-                const scene = phaserGameRef.current.scene.getScene('LZoreGameScene');
-                if (scene) {
-                    scene.events.on('gameStateChanged', onGameStateChange);
-                    scene.events.on('cardPlayed', onCardPlayed);
-                }
-            }
         } catch (error) {
             console.error('Phaser游戏初始化失败:', error);
         }
@@ -70,12 +75,39 @@ export const LZorePhaserGame: React.FC<LZorePhaserGameProps> = ({
         return () => {
             if (phaserGameRef.current) {
                 try {
+                    console.log('🧹 清理Phaser游戏实例');
                     phaserGameRef.current.destroy(true);
                     phaserGameRef.current = null;
                 } catch (error) {
                     console.warn('Phaser游戏清理警告:', error);
                 }
             }
+        };
+    }, []); // 移除依赖，只在组件挂载时创建一次
+
+    // 单独处理回调函数的更新
+    useEffect(() => {
+        if (!phaserGameRef.current?.scene) return;
+        
+        const scene = phaserGameRef.current.scene.getScene('LZoreGameScene');
+        if (!scene) return;
+        
+        // 移除旧的事件监听器
+        scene.events.off('gameStateChanged');
+        scene.events.off('cardPlayed');
+        
+        // 添加新的事件监听器
+        if (onGameStateChange) {
+            scene.events.on('gameStateChanged', onGameStateChange);
+        }
+        if (onCardPlayed) {
+            scene.events.on('cardPlayed', onCardPlayed);
+        }
+        
+        return () => {
+            // 清理事件监听器
+            scene.events.off('gameStateChanged');
+            scene.events.off('cardPlayed');
         };
     }, [onGameStateChange, onCardPlayed]);
 
