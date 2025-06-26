@@ -42,6 +42,9 @@ export class LZoreGameScene extends Phaser.Scene {
     
     // phaser-react-ui 接口
     private ui!: Interface;
+    
+    // 音频系统
+    private battleBGM: Phaser.Sound.BaseSound | null = null;
 
     constructor() {
         super({ key: 'LZoreGameScene' });
@@ -53,18 +56,14 @@ export class LZoreGameScene extends Phaser.Scene {
         
         // 加载粒子效果资源
         this.loadParticleAssets();
+        
+        // 预加载背景音乐
+        this.loadAudioAssets();
     }
 
     create() {
-        // 禁用音频以避免AudioContext问题
-        try {
-            if (this.sound) {
-                this.sound.mute = true;
-                this.sound.volume = 0;
-            }
-        } catch (error) {
-            console.warn('音频设置警告:', error);
-        }
+        // 初始化音频系统
+        this.initializeAudio();
         
         // 初始化游戏状态
         this.initializeGameState();
@@ -110,6 +109,13 @@ export class LZoreGameScene extends Phaser.Scene {
         
         // 发送游戏就绪事件
         this.events.emit('gameReady');
+        
+        // 延迟显示音频提示，确保UI系统已就绪
+        this.time.delayedCall(1000, () => {
+            if (this.uiManager) {
+                this.uiManager.showMessage('🎵 按M键启动/控制背景音乐', 'warning');
+            }
+        });
     }
 
     /**
@@ -122,6 +128,31 @@ export class LZoreGameScene extends Phaser.Scene {
         graphics.fillCircle(0, 0, 8);
         graphics.generateTexture('particle', 16, 16);
         graphics.destroy();
+    }
+
+    /**
+     * 加载音频资源
+     */
+    private loadAudioAssets() {
+        console.log('🎵 开始加载音频资源...');
+        
+        // 加载虚拟人格对抗背景音乐 - 使用正确的public路径
+        this.load.audio('bgm_battle', '/Audio/BGM/Battle/虚拟人格对抗.mp3');
+        
+        // 添加音频加载事件监听
+        this.load.on('filecomplete-audio-bgm_battle', () => {
+            console.log('✅ BGM音频文件加载成功');
+        });
+        
+        this.load.on('loaderror', (file: any) => {
+            if (file.key === 'bgm_battle') {
+                console.error('❌ BGM音频文件加载失败:', file);
+            }
+        });
+        
+        // TODO: 等待音效文件创建后再添加
+        // this.load.audio('card_place', 'src/asset/audio/SFX/Card/card_place.wav');
+        // this.load.audio('card_draw', 'src/asset/audio/SFX/Card/card_draw.wav');
     }
 
     /**
@@ -176,6 +207,33 @@ export class LZoreGameScene extends Phaser.Scene {
         graphics.generateTexture(key, width, height);
         graphics.destroy();
     }
+
+    /**
+     * 初始化音频系统
+     */
+    private initializeAudio() {
+        try {
+            // 设置音频参数
+            if (this.sound) {
+                this.sound.mute = false;
+                this.sound.volume = 0.7; // 设置适中的音量
+            }
+            
+            // 创建背景音乐但不立即播放
+            this.battleBGM = this.sound.add('bgm_battle', {
+                loop: true,
+                volume: 0.4 // 背景音乐音量稍低
+            });
+            
+            console.log('🎵 音频系统已初始化，按M键启动背景音乐');
+            
+        } catch (error) {
+            console.warn('音频初始化警告:', error);
+            // 如果音频初始化失败，不影响游戏进行
+        }
+    }
+
+
 
     /**
      * 初始化游戏状态 - 即时系统
@@ -242,6 +300,14 @@ export class LZoreGameScene extends Phaser.Scene {
         console.log(`处理卡牌放置: ${cardData.name} 到位置 ${position}`);
         console.log('放置前手牌数量:', this.playerHand.children.entries.length);
         console.log('放置前场上卡牌数量:', this.placedCards.length);
+        
+        // TODO: 等待音效文件创建后再启用
+        // 播放卡牌放置音效
+        // try {
+        //     this.sound.play('card_place', { volume: 0.5 });
+        // } catch (error) {
+        //     // 音效播放失败不影响游戏
+        // }
         
         // 从手牌中移除
         this.playerHand.remove(card);
@@ -357,6 +423,14 @@ export class LZoreGameScene extends Phaser.Scene {
         // 创建卡牌
         const cardContainer = this.createCard(randomCard, x, y);
         this.playerHand.add(cardContainer);
+        
+        // TODO: 等待音效文件创建后再启用
+        // 播放抽卡音效
+        // try {
+        //     this.sound.play('card_draw', { volume: 0.3 });
+        // } catch (error) {
+        //     // 音效播放失败不影响游戏
+        // }
         
         // 抽卡动画
         cardContainer.setScale(0);
@@ -630,6 +704,11 @@ export class LZoreGameScene extends Phaser.Scene {
             }
         });
         
+        // M键 - 切换音乐静音
+        this.input.keyboard!.on('keydown-M', () => {
+            this.toggleAudio();
+        });
+        
         // ESC键 - 关闭面板
         this.input.keyboard!.on('keydown-ESC', () => {
             if (this.isEffectPanelOpen) {
@@ -661,6 +740,53 @@ export class LZoreGameScene extends Phaser.Scene {
         this.realtimeManager.startPlayerCooldown();
         
         this.uiManager.showMessage('🔥 神煞能力已使用！进入冷却期', 'success');
+    }
+
+    /**
+     * 切换音频静音状态
+     */
+    private toggleAudio() {
+        try {
+            if (this.battleBGM) {
+                if (this.battleBGM.isPlaying) {
+                    // 如果正在播放，则暂停
+                    this.battleBGM.pause();
+                    if (this.uiManager) {
+                        this.uiManager.showMessage('🔇 音乐已暂停', 'success');
+                    }
+                    console.log('背景音乐已暂停');
+                } else {
+                    // 如果没有播放，则开始播放或恢复
+                    const playResult = this.battleBGM.play();
+                    if (playResult) {
+                        if (this.uiManager) {
+                            this.uiManager.showMessage('🎵 背景音乐已启动！', 'success');
+                        }
+                        console.log('🎵 背景音乐已启动: 虚拟人格对抗');
+                    } else {
+                        // 如果是暂停状态，尝试恢复
+                        this.battleBGM.resume();
+                        if (this.uiManager) {
+                            this.uiManager.showMessage('🎵 音乐已恢复', 'success');
+                        }
+                        console.log('背景音乐已恢复');
+                    }
+                }
+            } else if (this.sound) {
+                // 备用方案：切换整个音频系统
+                this.sound.mute = !this.sound.mute;
+                const status = this.sound.mute ? '🔇 音频已静音' : '🎵 音频已开启';
+                if (this.uiManager) {
+                    this.uiManager.showMessage(status, 'success');
+                }
+                console.log(`音频状态已切换: ${this.sound.mute ? '静音' : '开启'}`);
+            }
+        } catch (error) {
+            console.warn('音频切换失败:', error);
+            if (this.uiManager) {
+                this.uiManager.showMessage('🔇 音频控制失败', 'error');
+            }
+        }
     }
 
     /**

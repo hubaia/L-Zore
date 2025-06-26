@@ -19,7 +19,9 @@ export function getCardTypeColor(cardType: string): number {
  */
 export function getPillarName(index: number): string {
     const pillars = ['年柱', '月柱', '日柱', '时柱'];
-    return pillars[index] || '未知柱位';
+    // 支持0-7的索引范围，0-3是对方，4-7是己方
+    const pillarIndex = index % 4;
+    return pillars[pillarIndex] || '未知柱位';
 }
 
 /**
