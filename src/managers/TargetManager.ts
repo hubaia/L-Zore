@@ -44,6 +44,34 @@ export class TargetManager {
         console.log(`🎯 TargetManager: 收集到${targets.length}个${actionType}目标`);
         return targets;
     }
+
+    /**
+     * 收集所有可能的目标（扩展版 - 支持更灵活的目标选择）
+     */
+    collectAllTargetsExtended(): Array<{
+        id: string,
+        name: string,
+        type: 'fieldCard' | 'bazi',
+        owner: 'player' | 'opponent',
+        data: any
+    }> {
+        const targets: Array<{
+            id: string,
+            name: string,
+            type: 'fieldCard' | 'bazi',
+            owner: 'player' | 'opponent',
+            data: any
+        }> = [];
+        
+        // 收集所有场上的神煞卡（不限制己方/对手）
+        this.collectAllFieldCardTargets(targets);
+        
+        // 收集所有八字目标（己方+对手）
+        this.collectAllBaziTargets(targets);
+        
+        console.log(`🎯 TargetManager: 收集到${targets.length}个扩展目标`);
+        return targets;
+    }
     
     /**
      * 收集场上卡牌目标
@@ -70,6 +98,34 @@ export class TargetManager {
                 targets.push({
                     id: `field_${index}`,
                     name: cardData.name,
+                    type: 'fieldCard',
+                    owner: isPlayerCard ? 'player' : 'opponent',
+                    data: { card, cardData, index }
+                });
+            }
+        });
+    }
+
+    /**
+     * 收集所有场上卡牌目标（不限制行动类型）
+     */
+    private collectAllFieldCardTargets(
+        targets: Array<{
+            id: string,
+            name: string,
+            type: 'fieldCard' | 'bazi',
+            owner: 'player' | 'opponent',
+            data: any
+        }>
+    ): void {
+        this.placedCards.forEach((card, index) => {
+            const cardData = card.getData('cardData');
+            const isPlayerCard = card.y > this.scene.cameras.main.height / 2; // 根据位置判断归属
+            
+            if (cardData && !card.getData('neutralized')) {
+                targets.push({
+                    id: `field_${index}`,
+                    name: `${isPlayerCard ? '己方' : '对手'}${cardData.name}`,
                     type: 'fieldCard',
                     owner: isPlayerCard ? 'player' : 'opponent',
                     data: { card, cardData, index }
@@ -116,6 +172,43 @@ export class TargetManager {
                 });
             });
         }
+    }
+
+    /**
+     * 收集所有八字目标（己方+对手）
+     */
+    private collectAllBaziTargets(
+        targets: Array<{
+            id: string,
+            name: string,
+            type: 'fieldCard' | 'bazi',
+            owner: 'player' | 'opponent',
+            data: any
+        }>
+    ): void {
+        const pillarNames = ['年柱', '月柱', '日柱', '时柱'];
+        
+        // 收集对手八字目标
+        pillarNames.forEach((pillarName, index) => {
+            targets.push({
+                id: `opponent_bazi_${index}`,
+                name: `对手${pillarName}`,
+                type: 'bazi',
+                owner: 'opponent',
+                data: { pillarIndex: index, pillarName }
+            });
+        });
+
+        // 收集己方八字目标
+        pillarNames.forEach((pillarName, index) => {
+            targets.push({
+                id: `player_bazi_${index}`,
+                name: `己方${pillarName}`,
+                type: 'bazi',
+                owner: 'player',
+                data: { pillarIndex: index, pillarName }
+            });
+        });
     }
     
     /**
@@ -204,6 +297,39 @@ export class TargetManager {
             };
         }
         
+        return {
+            isValid: true,
+            target
+        };
+    }
+
+    /**
+     * 验证目标是否有效（扩展版 - 支持更灵活的目标选择）
+     */
+    validateTargetExtended(targetId: string): {
+        isValid: boolean;
+        target?: any;
+        reason?: string;
+    } {
+        const allTargets = this.collectAllTargetsExtended();
+        const target = allTargets.find(t => t.id === targetId);
+        
+        if (!target) {
+            return {
+                isValid: false,
+                reason: '目标不存在'
+            };
+        }
+        
+        // 检查目标是否已被中和（对于场上卡牌）
+        if (target.type === 'fieldCard' && target.data.card?.getData('neutralized')) {
+            return {
+                isValid: false,
+                reason: '目标已被中和'
+            };
+        }
+        
+        // 扩展版允许对任何有效目标进行操作
         return {
             isValid: true,
             target

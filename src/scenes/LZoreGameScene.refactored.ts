@@ -770,9 +770,12 @@ export class LZoreGameScene extends Phaser.Scene {
         
         this.uiManager.showMessage('⏸️ 时空暂停！选择神煞效果...', 'warning');
         
-        // 收集目标数据
+        // 收集目标数据 - 使用扩展的目标收集功能
         const actionType = cardData.type === 'auspicious' ? 'buff' : 'damage';
-        const targets = this.collectAllTargets(actionType);
+        const targets = this.targetManager.collectAllTargetsExtended();
+        
+        console.log(`🎯 神煞效果面板打开：${cardData.name}，操作类型：${actionType}，目标数：${targets.length}`);
+        console.log('🎯 目标详情：', targets.map(t => `${t.name}(${t.type}:${t.owner})`).join(', '));
         
         // 设置15秒超时机制
         this.effectPanelTimeoutId = this.time.delayedCall(15000, () => {

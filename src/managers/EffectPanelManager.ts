@@ -8,16 +8,24 @@ export class EffectPanelManager {
     private scene: Phaser.Scene;
     private isEffectPanelOpen: boolean = false;
     private uiManager: any; // UIManager 引用
+    private targetManager: any; // TargetManager 引用
     
     constructor(scene: Phaser.Scene, uiManager: any) {
         this.scene = scene;
         this.uiManager = uiManager;
     }
+
+    /**
+     * 设置目标管理器引用
+     */
+    setTargetManager(targetManager: any): void {
+        this.targetManager = targetManager;
+    }
     
     /**
      * 打开神煞效果面板
      */
-    openEffectPanel(cardData: LZoreCard, sourceCard: Phaser.GameObjects.Container, gameState: any): void {
+    openEffectPanel(cardData: LZoreCard, sourceCard: Phaser.GameObjects.Container, gameState: any, useExtendedTargets: boolean = false): void {
         if (this.isEffectPanelOpen) return;
         
         console.log('🔄 EffectPanelManager: 打开效果面板');
@@ -31,14 +39,24 @@ export class EffectPanelManager {
         
         // 收集目标数据
         const actionType = cardData.type === 'auspicious' ? 'buff' : 'damage';
-        const targets = this.collectAllTargets(actionType);
+        const targets = useExtendedTargets 
+            ? (this.targetManager ? this.targetManager.collectAllTargetsExtended() : this.collectAllTargets(actionType))
+            : this.collectAllTargets(actionType);
         
         // 发送事件到React UI
         this.scene.events.emit('effectPanelOpen', {
             cardData: cardData,
             sourceCard: sourceCard,
-            targets: targets
+            targets: targets,
+            useExtendedTargets: useExtendedTargets
         });
+    }
+
+    /**
+     * 打开神煞效果面板（扩展版 - 支持选择所有目标）
+     */
+    openEffectPanelExtended(cardData: LZoreCard, sourceCard: Phaser.GameObjects.Container, gameState: any): void {
+        this.openEffectPanel(cardData, sourceCard, gameState, true);
     }
     
     /**
@@ -69,9 +87,10 @@ export class EffectPanelManager {
         cardData: LZoreCard,
         actionType: 'damage' | 'buff',
         allocations: Record<string, number>,
-        targets: any[]
+        targets: any[],
+        useExtendedTargets?: boolean
     }, gameState: any, placedCards: Phaser.GameObjects.Container[]): boolean {
-        const { cardData, actionType, allocations, targets } = data;
+        const { cardData, actionType, allocations, targets, useExtendedTargets = false } = data;
         
         console.log(`🎯 EffectPanelManager: 执行多目标${actionType === 'damage' ? '伤害' : '增益'}:`, allocations);
         
@@ -93,16 +112,18 @@ export class EffectPanelManager {
             if (!target || value <= 0) return;
             
             if (target.type === 'fieldCard') {
-                this.applyFieldCardEffect(target, actionType, value, cardData, placedCards);
+                this.applyFieldCardEffect(target, actionType, value, cardData, placedCards, useExtendedTargets);
             } else if (target.type === 'bazi') {
-                const gameEnded = this.applyBaziEffect(target, actionType, value, cardData, gameState);
+                const gameEnded = this.applyBaziEffect(target, actionType, value, cardData, gameState, useExtendedTargets);
                 if (gameEnded) {
                     shouldProceedToSettlement = false;
                     // 快速关闭面板后结束游戏
                     this.scene.time.delayedCall(200, () => {
                         this.closeEffectPanel(gameState);
                         this.scene.time.delayedCall(100, () => {
-                            this.onGameEnd('player', gameState);
+                            // 判断胜负：如果是对手八字被打败，玩家胜利；如果是己方八字被自损，对手胜利
+                            const winner = target.owner === 'opponent' ? 'player' : 'opponent';
+                            this.onGameEnd(winner, gameState);
                         });
                     });
                     return;
@@ -126,43 +147,53 @@ export class EffectPanelManager {
         actionType: 'damage' | 'buff', 
         value: number, 
         cardData: LZoreCard,
-        placedCards: Phaser.GameObjects.Container[]
+        placedCards: Phaser.GameObjects.Container[],
+        useExtendedTargets: boolean = false
     ): void {
         const { card, cardData: targetCardData } = target.data;
         
         if (actionType === 'damage') {
-            // 直接中和目标神煞卡
-            card.setData('neutralized', true);
-            card.setAlpha(0.5);
-            card.list.forEach((child: any) => {
-                if (child.setTint) {
-                    child.setTint(0x666666);
-                }
-            });
-            
-            this.uiManager.showMessage(`${cardData.name} 以${value}炁克元素中和了 ${targetCardData.name}！`, 'success');
-            
-            // 延迟后移入弃牌堆
-            this.scene.time.delayedCall(1500, () => {
-                this.moveToDiscardPile(card, placedCards);
-            });
+            if (target.owner === 'opponent' || (useExtendedTargets && target.owner === 'player')) {
+                // 中和目标神煞卡
+                card.setData('neutralized', true);
+                card.setAlpha(0.5);
+                card.list.forEach((child: any) => {
+                    if (child.setTint) {
+                        child.setTint(0x666666);
+                    }
+                });
+                
+                const targetDescription = target.owner === 'player' ? '己方' : '对手';
+                this.uiManager.showMessage(`${cardData.name} 以${value}炁克元素中和了${targetDescription} ${targetCardData.name}！`, 
+                    target.owner === 'player' ? 'warning' : 'success');
+                
+                // 延迟后移入弃牌堆
+                this.scene.time.delayedCall(1500, () => {
+                    this.moveToDiscardPile(card, placedCards);
+                });
+            }
         } else {
-            // 增益效果：强化己方神煞卡
-            const glowEffect = this.scene.add.graphics();
-            glowEffect.lineStyle(3, 0x00ff00, 0.8);
-            glowEffect.strokeRect(card.x - 60, card.y - 90, 120, 180);
-            glowEffect.setDepth(99);
-            
-            // 标记为已强化
-            card.setData('buffed', true);
-            card.setData('buffValue', value);
-            
-            this.uiManager.showMessage(`${cardData.name} 以${value}炁克元素强化了 ${targetCardData.name}！`, 'success');
-            
-            // 移除发光效果
-            this.scene.time.delayedCall(3000, () => {
-                glowEffect.destroy();
-            });
+            if (target.owner === 'player' || (useExtendedTargets && target.owner === 'opponent')) {
+                // 强化目标神煞卡
+                const glowColor = target.owner === 'player' ? 0x00ff00 : 0x0088ff; // 己方绿色，对手蓝色
+                const glowEffect = this.scene.add.graphics();
+                glowEffect.lineStyle(3, glowColor, 0.8);
+                glowEffect.strokeRect(card.x - 60, card.y - 90, 120, 180);
+                glowEffect.setDepth(99);
+                
+                // 标记为已强化
+                card.setData('buffed', true);
+                card.setData('buffValue', value);
+                
+                const targetDescription = target.owner === 'player' ? '己方' : '对手';
+                this.uiManager.showMessage(`${cardData.name} 以${value}炁克元素强化了${targetDescription} ${targetCardData.name}！`, 
+                    target.owner === 'player' ? 'success' : 'info');
+                
+                // 移除发光效果
+                this.scene.time.delayedCall(3000, () => {
+                    glowEffect.destroy();
+                });
+            }
         }
     }
     
@@ -174,27 +205,55 @@ export class EffectPanelManager {
         actionType: 'damage' | 'buff', 
         value: number, 
         cardData: LZoreCard,
-        gameState: any
+        gameState: any,
+        useExtendedTargets: boolean = false
     ): boolean {
         const { pillarIndex, pillarName } = target.data;
         let gameEnded = false;
         
         if (actionType === 'damage') {
-            // 对对手本命八字造成伤害
-            const actualDamage = Math.min(value, gameState.opponentRemainingElements);
-            gameState.opponentRemainingElements -= actualDamage;
-            
-            this.uiManager.showMessage(`${cardData.name} 以${actualDamage}炁克元素攻击了${pillarName}！对手剩余${gameState.opponentRemainingElements}枚元素`, 'error');
-            
-            if (gameState.opponentRemainingElements <= 0) {
-                gameEnded = true;
+            if (target.owner === 'opponent') {
+                // 对对手本命八字造成伤害
+                const actualDamage = Math.min(value, gameState.opponentRemainingElements);
+                gameState.opponentRemainingElements -= actualDamage;
+                
+                this.uiManager.showMessage(`${cardData.name} 以${actualDamage}炁克元素攻击了${pillarName}！对手剩余${gameState.opponentRemainingElements}枚元素`, 'error');
+                
+                if (gameState.opponentRemainingElements <= 0) {
+                    gameEnded = true;
+                }
+            } else if (useExtendedTargets && target.owner === 'player') {
+                // 扩展模式：可以对己方八字造成伤害（自损）
+                const actualDamage = Math.min(value, gameState.playerRemainingElements);
+                gameState.playerRemainingElements -= actualDamage;
+                
+                this.uiManager.showMessage(`${cardData.name} 以${actualDamage}炁克元素自损了${pillarName}！玩家剩余${gameState.playerRemainingElements}枚元素`, 'warning');
+                
+                if (gameState.playerRemainingElements <= 0) {
+                    gameEnded = true;
+                    // 自损导致失败
+                    this.scene.time.delayedCall(200, () => {
+                        this.closeEffectPanel(gameState);
+                        this.scene.time.delayedCall(100, () => {
+                            this.onGameEnd('opponent', gameState);
+                        });
+                    });
+                }
             }
         } else {
-            // 对己方本命八字增益
-            const actualHeal = Math.min(value, 8 - gameState.playerRemainingElements);
-            gameState.playerRemainingElements += actualHeal;
-            
-            this.uiManager.showMessage(`${cardData.name} 以${actualHeal}炁克元素增益了${pillarName}！玩家剩余${gameState.playerRemainingElements}枚元素`, 'success');
+            if (target.owner === 'player') {
+                // 对己方本命八字增益
+                const actualHeal = Math.min(value, 8 - gameState.playerRemainingElements);
+                gameState.playerRemainingElements += actualHeal;
+                
+                this.uiManager.showMessage(`${cardData.name} 以${actualHeal}炁克元素增益了${pillarName}！玩家剩余${gameState.playerRemainingElements}枚元素`, 'success');
+            } else if (useExtendedTargets && target.owner === 'opponent') {
+                // 扩展模式：可以对对手八字进行增益（治疗敌人）
+                const actualHeal = Math.min(value, 8 - gameState.opponentRemainingElements);
+                gameState.opponentRemainingElements += actualHeal;
+                
+                this.uiManager.showMessage(`${cardData.name} 以${actualHeal}炁克元素增益了${pillarName}！对手剩余${gameState.opponentRemainingElements}枚元素`, 'info');
+            }
         }
         
         return gameEnded;
