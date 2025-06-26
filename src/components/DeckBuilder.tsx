@@ -322,7 +322,7 @@ export const DeckBuilder: React.FC = () => {
      * 渲染神煞卡列表
      */
     const renderCardList = (cards: GameShenshaRecord[], title: string, subtitle: string) => (
-        <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-6 h-96 flex flex-col">
+        <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-6 max-h-96 flex flex-col">
             <h3 className="text-xl font-bold text-white mb-2 text-center">{title}</h3>
             <p className="text-purple-200 text-sm mb-4 text-center">{subtitle}</p>
             
@@ -377,7 +377,7 @@ export const DeckBuilder: React.FC = () => {
     );
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 relative overflow-hidden">
+        <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 relative overflow-hidden flex items-start justify-center">
             {/* 背景装饰元素 */}
             <div className="absolute inset-0 opacity-20">
                 <div className="absolute top-20 left-20 w-40 h-40 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl animate-pulse"></div>
@@ -387,11 +387,10 @@ export const DeckBuilder: React.FC = () => {
                 <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-28 h-28 bg-yellow-400 rounded-full mix-blend-multiply filter blur-xl animate-pulse animation-delay-3000"></div>
             </div>
             
-            {/* 主容器 - 响应式布局 */}
-            <div className="min-h-screen flex items-center justify-center relative z-10">
-                <div className="w-full flex flex-col lg:flex-row items-center justify-center max-w-7xl mx-auto">
-                    {/* 主要内容区域 */}
-                    <div className="w-full lg:flex-1 max-w-6xl px-4 py-8 overflow-y-auto">
+            {/* 主容器 - 水平居中布局 */}
+            <div className="w-full max-w-6xl mx-auto px-4 py-8 relative z-10">
+                {/* 主要内容区域 */}
+                <div className="w-full">
                     {/* 标题 */}
                     <div className="text-center mb-8">
                         <h1 className="text-m font-bold text-white mb-4">
@@ -614,7 +613,7 @@ export const DeckBuilder: React.FC = () => {
                             
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6 mb-8">
                                 {/* 主角神煞卡池 */}
-                                <div className="bg-gradient-to-br from-purple-600/20 to-indigo-600/20 rounded-xl p-4 h-80 flex flex-col">
+                                <div className="bg-gradient-to-br from-purple-600/20 to-indigo-600/20 rounded-xl p-4 max-h-80 flex flex-col">
                                     <h3 className="text-lg font-bold text-white mb-3 text-center flex items-center justify-center gap-2">
                                         <span className="text-2xl">👤</span>
                                         主角神煞卡池
@@ -660,7 +659,7 @@ export const DeckBuilder: React.FC = () => {
                                 </div>
 
                                 {/* 构筑神煞卡池 */}
-                                <div className="bg-gradient-to-br from-orange-600/20 to-red-600/20 rounded-xl p-4 h-80 flex flex-col">
+                                <div className="bg-gradient-to-br from-orange-600/20 to-red-600/20 rounded-xl p-4 max-h-80 flex flex-col">
                                     <h3 className="text-lg font-bold text-white mb-3 text-center flex items-center justify-center gap-2">
                                         <span className="text-2xl">🔧</span>
                                         构筑神煞卡池
@@ -715,7 +714,7 @@ export const DeckBuilder: React.FC = () => {
                                 </div>
 
                                 {/* 时间神煞卡池 */}
-                                <div className="bg-gradient-to-br from-green-600/20 to-cyan-600/20 rounded-xl p-4 h-80 flex flex-col">
+                                <div className="bg-gradient-to-br from-green-600/20 to-cyan-600/20 rounded-xl p-4 max-h-80 flex flex-col">
                                     <h3 className="text-lg font-bold text-white mb-3 text-center flex items-center justify-center gap-2">
                                         <span className="text-2xl">🕐</span>
                                         时间神煞卡池
@@ -799,51 +798,52 @@ export const DeckBuilder: React.FC = () => {
                         </div>
                     )}
 
-                    {/* 构筑完成后的操作 */}
-                    {isBuilt && (
-                        <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-6 mb-8">
-                            <h2 className="text-xl lg:text-2xl font-bold text-white mb-4 text-center">
-                                ⚔️ 构筑完成
-                            </h2>
-                            
-                            <div className="text-center">
+                    {/* 操作按钮区域 */}
+                    <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-6xl bg-gradient-to-t from-purple-900/95 via-purple-900/80 to-transparent py-6 px-4">
+                        <div className="w-full">
+                            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                                {/* 构筑完成后的操作 */}
+                                {isBuilt && (
+                                    <Link
+                                        to="/phaser-lzore"
+                                        className="inline-block bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-4 px-6 lg:px-8 rounded-xl shadow-lg transform hover:scale-105 transition-all duration-300 border-2 border-green-400/50 backdrop-blur-sm"
+                                    >
+                                        🎮 进入战斗
+                                    </Link>
+                                )}
+
+                                {/* 返回首页 */}
                                 <Link
-                                    to="/phaser-lzore"
-                                    className="inline-block bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-4 px-6 lg:px-8 rounded-xl shadow-lg transform hover:scale-105 transition-all duration-300"
+                                    to="/"
+                                    className="inline-block bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 border-2 border-gray-400/50 text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 backdrop-blur-sm shadow-lg"
                                 >
-                                    🎮 进入战斗
+                                    🏠 返回首页
                                 </Link>
                             </div>
                         </div>
-                    )}
-
-                    {/* 返回首页 */}
-                    <div className="text-center pb-8">
-                        <Link
-                            to="/"
-                            className="inline-block bg-gray-600/30 hover:bg-gray-600/50 border border-gray-400/40 text-white font-bold py-3 px-6 rounded-xl transition-all duration-300"
-                        >
-                            🏠 返回首页
-                        </Link>
                     </div>
+
+                    {/* 底部留白，避免内容被固定按钮遮挡 */}
+                    <div className="h-24"></div>
                 </div>
 
-                {/* 右侧总卡池 - 大屏显示 */}
+                {/* 总卡池区域 - 桌面端 */}
                 {isBuilt && (
-                    <div style={{height: 'calc(100svh - 18px)',paddingBottom: '45px',marginLeft: '5px'}} className="hidden lg:flex w-80 bg-gradient-to-br from-yellow-600/20 to-amber-600/20 backdrop-blur-sm border-l border-yellow-400/30 p-4 flex-col h-svh">
+                    <div className="hidden lg:block bg-gradient-to-br from-yellow-600/20 to-amber-600/20 backdrop-blur-sm border border-yellow-400/30 rounded-2xl p-4 mb-8">
                         <h3 className="text-lg font-bold text-white mb-2 text-center flex items-center justify-center gap-2">
                             <span className="text-2xl">🎴</span>
                             总卡池
                         </h3>
                         <div className="text-center text-yellow-200 text-xs mb-3">
                             总计: {[...protagonistDeck, ...builderDeck, ...timeDeck].length} 张 
-                            <br />
                             (👤{protagonistDeck.length} + 🔧{builderDeck.length} + 🕐{timeDeck.length})
                         </div>
-                        <div className="flex-1 overflow-y-auto">
-                            <div className="space-y-3">
+                        
+                        {/* 卡池内容 */}
+                        <div className="max-h-96 overflow-y-auto">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                                 {[...protagonistDeck, ...builderDeck, ...timeDeck].map((card, index) => (
-                                    <div key={`total-${card.id}-${index}`} className="bg-yellow-600/30 border border-yellow-400/50 rounded-lg p-3 transition-all duration-300">
+                                    <div key={`desktop-total-${card.id}-${index}`} className="bg-yellow-600/30 border border-yellow-400/50 rounded-lg p-3 transition-all duration-300">
                                         <div className="flex items-center justify-between mb-2">
                                             <h4 className="text-white font-bold text-sm flex items-center gap-2">
                                                 {card.name}
@@ -853,7 +853,6 @@ export const DeckBuilder: React.FC = () => {
                                                 <span className="text-yellow-200 text-xs bg-yellow-600/40 px-2 py-1 rounded">
                                                     {card.rarity}
                                                 </span>
-                                                {/* 来源标识 */}
                                                 {protagonistDeck.includes(card) && (
                                                     <span className="text-purple-200 text-xs bg-purple-600/40 px-1 py-0.5 rounded">👤</span>
                                                 )}
@@ -882,7 +881,7 @@ export const DeckBuilder: React.FC = () => {
                             </div>
                             
                             {[...protagonistDeck, ...builderDeck, ...timeDeck].length === 0 && (
-                                <div className="flex items-center justify-center h-full text-yellow-300 text-center text-sm">
+                                <div className="flex items-center justify-center h-40 text-yellow-300 text-center text-sm">
                                     <div>
                                         <div className="text-3xl mb-2">🌙</div>
                                         <div>暂无激活的神煞卡牌</div>
@@ -893,9 +892,9 @@ export const DeckBuilder: React.FC = () => {
                     </div>
                 )}
 
-                {/* 移动端总卡池 - 底部显示 */}
+                {/* 总卡池区域 - 移动端 */}
                 {isBuilt && (
-                    <div className="lg:hidden bg-gradient-to-br from-yellow-600/20 to-amber-600/20 backdrop-blur-sm border-t border-yellow-400/30 p-4">
+                    <div className="lg:hidden bg-gradient-to-br from-yellow-600/20 to-amber-600/20 backdrop-blur-sm border border-yellow-400/30 rounded-2xl p-4 mb-8">
                         <h3 className="text-lg font-bold text-white mb-2 text-center flex items-center justify-center gap-2">
                             <span className="text-2xl">🎴</span>
                             总卡池
@@ -923,7 +922,6 @@ export const DeckBuilder: React.FC = () => {
                                                     <span className="text-yellow-200 text-xs bg-yellow-600/40 px-2 py-1 rounded">
                                                         {card.rarity}
                                                     </span>
-                                                    {/* 来源标识 */}
                                                     {protagonistDeck.includes(card) && (
                                                         <span className="text-purple-200 text-xs bg-purple-600/40 px-1 py-0.5 rounded">👤</span>
                                                     )}
@@ -964,7 +962,6 @@ export const DeckBuilder: React.FC = () => {
                     </div>
                 )}
             </div>
-        </div>
         </div>
     );
 }; 
