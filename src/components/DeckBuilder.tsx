@@ -387,10 +387,11 @@ export const DeckBuilder: React.FC = () => {
                 <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-28 h-28 bg-yellow-400 rounded-full mix-blend-multiply filter blur-xl animate-pulse animation-delay-3000"></div>
             </div>
             
-            {/* 主容器 - 水平居中布局 */}
-            <div className="w-full max-w-6xl mx-auto px-4 py-8 relative z-10">
-                {/* 主要内容区域 */}
-                <div className="w-full">
+            {/* 主容器 - 左右布局 */}
+            <div className="w-full max-w-7xl mx-auto px-4 py-8 relative z-10">
+                <div className="flex gap-6">
+                    {/* 左侧主要内容区域 */}
+                    <div className="flex-1 min-w-0">
                     {/* 标题 */}
                     <div className="text-center mb-8">
                         <h1 className="text-m font-bold text-white mb-4">
@@ -825,142 +826,130 @@ export const DeckBuilder: React.FC = () => {
 
                     {/* 底部留白，避免内容被固定按钮遮挡 */}
                     <div className="h-24"></div>
-                </div>
+                    </div>
 
-                {/* 总卡池区域 - 桌面端 */}
-                {isBuilt && (
-                    <div className="hidden lg:block bg-gradient-to-br from-yellow-600/20 to-amber-600/20 backdrop-blur-sm border border-yellow-400/30 rounded-2xl p-4 mb-8">
-                        <h3 className="text-lg font-bold text-white mb-2 text-center flex items-center justify-center gap-2">
-                            <span className="text-2xl">🎴</span>
-                            总卡池
-                        </h3>
-                        <div className="text-center text-yellow-200 text-xs mb-3">
-                            总计: {[...protagonistDeck, ...builderDeck, ...timeDeck].length} 张 
-                            (👤{protagonistDeck.length} + 🔧{builderDeck.length} + 🕐{timeDeck.length})
-                        </div>
-                        
-                        {/* 卡池内容 */}
-                        <div className="max-h-96 overflow-y-auto">
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                                {[...protagonistDeck, ...builderDeck, ...timeDeck].map((card, index) => (
-                                    <div key={`desktop-total-${card.id}-${index}`} className="bg-yellow-600/30 border border-yellow-400/50 rounded-lg p-3 transition-all duration-300">
-                                        <div className="flex items-center justify-between mb-2">
-                                            <h4 className="text-white font-bold text-sm flex items-center gap-2">
-                                                {card.name}
-                                                <span className="text-green-400 text-xs">✅</span>
-                                            </h4>
-                                            <div className="flex items-center gap-1">
-                                                <span className="text-yellow-200 text-xs bg-yellow-600/40 px-2 py-1 rounded">
-                                                    {card.rarity}
-                                                </span>
-                                                {protagonistDeck.includes(card) && (
-                                                    <span className="text-purple-200 text-xs bg-purple-600/40 px-1 py-0.5 rounded">👤</span>
-                                                )}
-                                                {builderDeck.includes(card) && (
-                                                    <span className="text-orange-200 text-xs bg-orange-600/40 px-1 py-0.5 rounded">🔧</span>
-                                                )}
-                                                {timeDeck.includes(card) && (
-                                                    <span className="text-green-200 text-xs bg-green-600/40 px-1 py-0.5 rounded">🕐</span>
-                                                )}
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <span className="text-lg">{getElementIcon(card.element || '')}</span>
-                                            <span className="text-white text-sm">
-                                                {card.currentLifeElements}/{card.maxLifeElements} {getElementName(card.element || '')}
-                                            </span>
-                                            <span className="text-green-300 text-xs bg-green-600/30 px-1 py-0.5 rounded">
-                                                已激活
-                                            </span>
-                                        </div>
-                                        <div className="text-yellow-200 text-xs bg-yellow-600/20 rounded px-2 py-1">
-                                            {card.effect}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                            
-                            {[...protagonistDeck, ...builderDeck, ...timeDeck].length === 0 && (
-                                <div className="flex items-center justify-center h-40 text-yellow-300 text-center text-sm">
-                                    <div>
-                                        <div className="text-3xl mb-2">🌙</div>
-                                        <div>暂无激活的神煞卡牌</div>
+                    {/* 右侧总卡池 - 红框位置 */}
+                    {isBuilt && (
+                        <div className="hidden lg:block w-80 xl:w-96">
+                            <div className="sticky top-8 bg-gradient-to-br from-yellow-600/20 to-amber-600/20 backdrop-blur-sm border border-yellow-400/30 rounded-2xl p-4 max-h-[calc(100vh-4rem)] flex flex-col">
+                                {/* 总卡池标题 */}
+                                <div className="text-center mb-4">
+                                    <h3 className="text-xl font-bold text-white mb-2 flex items-center justify-center gap-2">
+                                        <span className="text-2xl">🎴</span>
+                                        总卡池
+                                    </h3>
+                                    <div className="text-center text-yellow-200 text-sm">
+                                        总计: {[...protagonistDeck, ...builderDeck, ...timeDeck].length} 张
                                     </div>
                                 </div>
-                            )}
-                        </div>
-                    </div>
-                )}
 
-                {/* 总卡池区域 - 移动端 */}
-                {isBuilt && (
-                    <div className="lg:hidden bg-gradient-to-br from-yellow-600/20 to-amber-600/20 backdrop-blur-sm border border-yellow-400/30 rounded-2xl p-4 mb-8">
-                        <h3 className="text-lg font-bold text-white mb-2 text-center flex items-center justify-center gap-2">
-                            <span className="text-2xl">🎴</span>
-                            总卡池
-                        </h3>
-                        <div className="text-center text-yellow-200 text-xs mb-3">
-                            总计: {[...protagonistDeck, ...builderDeck, ...timeDeck].length} 张 
-                            (👤{protagonistDeck.length} + 🔧{builderDeck.length} + 🕐{timeDeck.length})
-                        </div>
-                        
-                        {/* 可折叠的卡池内容 */}
-                        <details className="group">
-                            <summary className="cursor-pointer bg-yellow-600/30 rounded-lg p-2 text-center text-white font-bold mb-3 group-open:mb-3">
-                                🔽 展开查看卡牌详情 ({[...protagonistDeck, ...builderDeck, ...timeDeck].length}张)
-                            </summary>
-                            <div className="max-h-60 overflow-y-auto">
-                                <div className="space-y-3">
-                                    {[...protagonistDeck, ...builderDeck, ...timeDeck].map((card, index) => (
-                                        <div key={`mobile-total-${card.id}-${index}`} className="bg-yellow-600/30 border border-yellow-400/50 rounded-lg p-3">
-                                            <div className="flex items-center justify-between mb-2">
-                                                <h4 className="text-white font-bold text-sm flex items-center gap-2">
-                                                    {card.name}
-                                                    <span className="text-green-400 text-xs">✅</span>
-                                                </h4>
-                                                <div className="flex items-center gap-1">
-                                                    <span className="text-yellow-200 text-xs bg-yellow-600/40 px-2 py-1 rounded">
-                                                        {card.rarity}
-                                                    </span>
-                                                    {protagonistDeck.includes(card) && (
-                                                        <span className="text-purple-200 text-xs bg-purple-600/40 px-1 py-0.5 rounded">👤</span>
-                                                    )}
-                                                    {builderDeck.includes(card) && (
-                                                        <span className="text-orange-200 text-xs bg-orange-600/40 px-1 py-0.5 rounded">🔧</span>
-                                                    )}
-                                                    {timeDeck.includes(card) && (
-                                                        <span className="text-green-200 text-xs bg-green-600/40 px-1 py-0.5 rounded">🕐</span>
-                                                    )}
+                                {/* 分类统计 */}
+                                <div className="grid grid-cols-3 gap-2 mb-4">
+                                    <div className="bg-purple-600/30 border border-purple-400/50 rounded-lg p-2 text-center">
+                                        <div className="text-lg">👤</div>
+                                        <div className="text-white font-bold">{protagonistDeck.length}</div>
+                                        <div className="text-purple-200 text-xs">主角</div>
+                                    </div>
+                                    <div className="bg-orange-600/30 border border-orange-400/50 rounded-lg p-2 text-center">
+                                        <div className="text-lg">🔧</div>
+                                        <div className="text-white font-bold">{builderDeck.length}</div>
+                                        <div className="text-orange-200 text-xs">构筑</div>
+                                    </div>
+                                    <div className="bg-green-600/30 border border-green-400/50 rounded-lg p-2 text-center">
+                                        <div className="text-lg">🕐</div>
+                                        <div className="text-white font-bold">{timeDeck.length}</div>
+                                        <div className="text-green-200 text-xs">时间</div>
+                                    </div>
+                                </div>
+
+                                {/* 卡牌列表 */}
+                                <div className="flex-1 overflow-y-auto pr-2">
+                                    <div className="space-y-3">
+                                        {[...protagonistDeck, ...builderDeck, ...timeDeck].map((card, index) => {
+                                            // 确定卡牌来源
+                                            const source = protagonistDeck.includes(card) ? 'protagonist' : 
+                                                          builderDeck.includes(card) ? 'builder' : 'time';
+                                            const sourceConfig = {
+                                                protagonist: { 
+                                                    bg: 'bg-gradient-to-r from-purple-600/30 to-purple-700/30',
+                                                    border: 'border-purple-400/50',
+                                                    icon: '👤',
+                                                    label: '主角',
+                                                    color: 'text-purple-200'
+                                                },
+                                                builder: { 
+                                                    bg: 'bg-gradient-to-r from-orange-600/30 to-orange-700/30',
+                                                    border: 'border-orange-400/50',
+                                                    icon: '🔧',
+                                                    label: '构筑',
+                                                    color: 'text-orange-200'
+                                                },
+                                                time: { 
+                                                    bg: 'bg-gradient-to-r from-green-600/30 to-green-700/30',
+                                                    border: 'border-green-400/50',
+                                                    icon: '🕐',
+                                                    label: '时间',
+                                                    color: 'text-green-200'
+                                                }
+                                            };
+                                            const config = sourceConfig[source];
+
+                                            return (
+                                                <div key={`sidebar-${card.id}-${index}`} className={`${config.bg} border ${config.border} rounded-lg p-3 transition-all duration-300 hover:scale-105 hover:shadow-lg`}>
+                                                    {/* 卡牌头部 */}
+                                                    <div className="flex items-center justify-between mb-2">
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-sm">{config.icon}</span>
+                                                            <h4 className="text-white font-bold text-sm truncate">{card.name}</h4>
+                                                        </div>
+                                                        <span className="text-green-400 text-xs">✅</span>
+                                                    </div>
+
+                                                    {/* 元素和数值 */}
+                                                    <div className="flex items-center justify-between mb-2">
+                                                        <div className="flex items-center gap-1">
+                                                            <span className="text-lg">{getElementIcon(card.element || '')}</span>
+                                                            <span className="text-white text-xs">
+                                                                {card.currentLifeElements}/{card.maxLifeElements}
+                                                            </span>
+                                                        </div>
+                                                        <div className={`${getRarityColor(card.rarity)} text-xs px-1 py-0.5 rounded border`}>
+                                                            {card.rarity}
+                                                        </div>
+                                                    </div>
+
+                                                    {/* 来源标识 */}
+                                                    <div className="flex items-center justify-center">
+                                                        <span className={`text-xs ${config.color} bg-black/20 px-2 py-1 rounded-full`}>
+                                                            {config.label}神煞
+                                                        </span>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            <div className="flex items-center gap-2 mb-2">
-                                                <span className="text-lg">{getElementIcon(card.element || '')}</span>
-                                                <span className="text-white text-sm">
-                                                    {card.currentLifeElements}/{card.maxLifeElements} {getElementName(card.element || '')}
-                                                </span>
-                                                <span className="text-green-300 text-xs bg-green-600/30 px-1 py-0.5 rounded">
-                                                    已激活
-                                                </span>
-                                            </div>
-                                            <div className="text-yellow-200 text-xs bg-yellow-600/20 rounded px-2 py-1">
-                                                {card.effect}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                                
-                                {[...protagonistDeck, ...builderDeck, ...timeDeck].length === 0 && (
-                                    <div className="flex items-center justify-center h-20 text-yellow-300 text-center text-sm">
-                                        <div>
-                                            <div className="text-2xl mb-1">🌙</div>
-                                            <div>暂无激活的神煞卡牌</div>
-                                        </div>
+                                            );
+                                        })}
                                     </div>
-                                )}
+                                    
+                                    {[...protagonistDeck, ...builderDeck, ...timeDeck].length === 0 && (
+                                        <div className="flex items-center justify-center h-40 text-yellow-300 text-center">
+                                            <div>
+                                                <div className="text-4xl mb-2">🌙</div>
+                                                <div className="text-sm">暂无神煞卡牌</div>
+                                                <div className="text-xs opacity-70 mt-1">完成构筑后显示</div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* 底部提示 */}
+                                <div className="mt-4 pt-3 border-t border-yellow-400/30">
+                                    <div className="text-yellow-200 text-xs text-center">
+                                        💡 卡牌总览 - 所有激活神煞
+                                    </div>
+                                </div>
                             </div>
-                        </details>
-                    </div>
-                )}
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );
