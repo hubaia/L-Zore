@@ -14,6 +14,30 @@ export interface LZoreCard {
     rarity: string;
     description: string;
     effect: string;
+    // 新增：神煞出现条件和生命元素系统
+    appearConditions?: ShenshaCondition[]; // 神煞出现条件
+    lifeElementGeneration?: LifeElementGeneration; // 生命元素生成规则
+    currentLifeElements?: number; // 当前生命元素数量
+    maxLifeElements?: number; // 最大生命元素容量
+}
+
+/**
+ * 神煞出现条件
+ */
+export interface ShenshaCondition {
+    type: 'bazi' | 'season' | 'element' | 'combination'; // 条件类型
+    requirement: string; // 具体要求
+    description: string; // 条件描述
+}
+
+/**
+ * 生命元素生成规则
+ */
+export interface LifeElementGeneration {
+    baseGeneration: number; // 基础生成量（条件满足时生成）
+    elementType: 'metal' | 'wood' | 'water' | 'fire' | 'earth'; // 生成元素类型
+    generationTrigger: 'turn' | 'condition' | 'placement' | 'combat'; // 生成触发条件
+    maxPerTurn: number; // 每轮最大生成量
 }
 
 /**

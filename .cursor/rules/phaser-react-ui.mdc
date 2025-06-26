@@ -1,0 +1,6 @@
+---
+description: Phaser
+globs: 
+alwaysApply: false
+---
+尽可能多的使用phaser-react-ui的API来完成，而不是Phaser的API

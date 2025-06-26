@@ -12,19 +12,22 @@ export class RealtimeSystemManager {
     private messageCallback: (text: string, type: 'success' | 'warning' | 'error') => void;
     private updateUICallback: () => void;
     private autoDrawCallback: () => void;
+    private lifeElementGenerationCallback?: () => void;
 
     constructor(
         scene: Phaser.Scene, 
         gameState: GameState,
         messageCallback: (text: string, type: 'success' | 'warning' | 'error') => void,
         updateUICallback: () => void,
-        autoDrawCallback: () => void
+        autoDrawCallback: () => void,
+        lifeElementGenerationCallback?: () => void
     ) {
         this.scene = scene;
         this.gameState = gameState;
         this.messageCallback = messageCallback;
         this.updateUICallback = updateUICallback;
         this.autoDrawCallback = autoDrawCallback;
+        this.lifeElementGenerationCallback = lifeElementGenerationCallback;
     }
 
     /**
@@ -92,6 +95,12 @@ export class RealtimeSystemManager {
      */
     private onNewCycle() {
         this.messageCallback(`🔄 第${this.gameState.currentCycle}周期开始！公共卡池更新`, 'warning');
+        
+        // 生成生命元素（每轮触发）
+        if (this.lifeElementGenerationCallback) {
+            this.lifeElementGenerationCallback();
+        }
+        
         // 这里可以添加公共卡池更新逻辑
     }
     

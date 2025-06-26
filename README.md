@@ -264,3 +264,133 @@ L-Zore不仅是一款游戏，更是一次文化传承的创新实验。我们�
 [🎮 立即体验游戏](https://lzore-game.github.io) | [📚 查看文档](docs/) | [💬 加入社区](https://community.lzore-game.com)
 
 </div>
+
+## 🌟 最新更新：神煞数据库系统
+
+### 📊 神煞数据库 (IndexedDB)
+基于传统命理学的完整神煞数据库系统，使用IndexedDB本地存储。
+
+**特性：**
+- 50种传统神煞完整数据
+- 三大分类：吉星吉神、凶星凶神、特殊神煞
+- 完整的传统查法实现
+- 多维度查询功能
+- TypeScript类型安全
+
+**核心文件：**
+- `src/db/ShenshaDatabase.ts` - 主数据库类
+- `src/components/ShenshaDBDemo.tsx` - 演示组件
+- `src/db/README.md` - 详细文档
+
+**使用方法：**
+```typescript
+import { shenshaDB } from './src/db/ShenshaDatabase';
+
+// 初始化数据库
+await shenshaDB.initialize();
+
+// 查询神煞
+const bazi = {
+    year: { gan: '甲', zhi: '子' },
+    month: { gan: '乙', zhi: '丑' },
+    day: { gan: '丙', zhi: '寅' },
+    hour: { gan: '丁', zhi: '卯' }
+};
+
+const matchingShensha = await shenshaDB.findShenshaForBazi(bazi);
+```
+
+**支持的神煞查法：**
+- 天乙贵人：甲戊庚牛羊，乙己鼠猴乡...
+- 文昌贵人：甲乙巳午报君知...
+- 羊刃：甲刃卯，乙刃寅...
+- 华盖：三合局见墓库
+- 驿马：三合局对冲
+- 将星：三合局旺位
+- 魁罡：庚戌、庚辰、戊戌、壬辰四日柱
+- 更多...
+
+## 🎯 项目结构
+
+### 核心游戏系统
+- **主场景**: `src/scenes/LZoreGameScene.refactored.ts` - 主游戏场景
+- **管理器系统**: `src/managers/` - 16个专业管理器
+- **界面组件**: `src/components/` - React UI组件
+- **路由系统**: `src/routes/` - 页面路由
+
+### 构筑系统
+- **三源融合**: 主角神煞 + 构筑器神煞 + 时间神煞
+- **数据碎片**: 资源投入系统
+- **八字配置**: 完整的天干地支配置
+
+### 战斗系统
+- **神煞卡牌**: 基于传统命理的卡牌效果
+- **生命元素**: 五行元素系统
+- **实时计算**: 基于八字的动态神煞生成
+
+## 🚀 快速开始
+
+1. **安装依赖**
+```bash
+npm install
+```
+
+2. **启动开发服务器**
+```bash
+npm run dev
+```
+
+3. **访问应用**
+- 主页: `http://localhost:5173/`
+- 构筑界面: `http://localhost:5173/deck-builder`
+- 游戏场景: `http://localhost:5173/phaser-lzore`
+
+## 📖 详细文档
+
+- [神煞数据库说明](src/db/README.md)
+- [游戏重构总结](L-Zore游戏重构第二阶段完成总结.md)
+- [构筑系统说明](神煞构筑系统实现总结.md)
+- [生命元素系统](神煞卡牌生命元素系统实现总结.md)
+
+## 🎨 技术栈
+
+- **前端框架**: React 18 + TypeScript
+- **游戏引擎**: Phaser.js 3
+- **数据库**: IndexedDB (浏览器本地)
+- **样式**: Tailwind CSS
+- **构建工具**: Vite
+- **类型安全**: 完整的TypeScript类型定义
+
+## 🌟 特色功能
+
+### 传统文化融合
+- 基于正统命理学的神煞系统
+- 完整的八字查法实现
+- 传统文化的现代化表达
+
+### 技术创新
+- 16个专业管理器的模块化架构
+- React-Phaser双向事件通信
+- IndexedDB本地数据库系统
+- 实时八字计算和神煞匹配
+
+### 游戏体验
+- 三源融合的构筑系统
+- 多层次策略深度
+- 美观的现代UI设计
+- 流畅的动画效果
+
+## 📊 项目状态
+
+- ✅ 核心游戏系统重构完成
+- ✅ 神煞数据库系统实现
+- ✅ 三源融合构筑系统
+- ✅ 生命元素系统
+- ✅ React-Phaser集成
+- 🚧 完整50种神煞数据录入
+- 🚧 高级战斗系统
+- 🔮 多人对战系统
+
+---
+
+**将传统文化与现代技术完美融合，为玩家带来独特的神煞卡牌游戏体验！** 🌟

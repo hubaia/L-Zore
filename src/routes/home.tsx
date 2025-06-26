@@ -48,26 +48,48 @@ export default function Home() {
                       体验最新的神煞卡牌战斗系统，感受传统与现代的完美融合
                     </p>
                   </div>
-                  <Link 
-                    to="/phaser-lzore" 
-                    className="block w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold py-6 px-8 rounded-2xl shadow-2xl transform hover:scale-[1.02] transition-all duration-300 text-center text-xl relative overflow-hidden group"
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-                    <div className="relative z-10">
-                      <div className="flex items-center justify-center gap-3 mb-2">
-                        <span className="text-3xl">🎴</span>
-                        <span>L-Zore 神煞卡牌战斗系统</span>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <Link 
+                      to="/deck-builder" 
+                      className="block w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold py-6 px-6 rounded-2xl shadow-2xl transform hover:scale-[1.02] transition-all duration-300 text-center relative overflow-hidden group"
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                      <div className="relative z-10">
+                        <div className="flex items-center justify-center gap-2 mb-2">
+                          <span className="text-2xl">🏗️</span>
+                          <span className="text-lg">神煞构筑中枢</span>
+                        </div>
+                        <div className="text-sm opacity-90 font-medium mb-2">
+                          三源融合 · 资源投入 · 时空同步
+                        </div>
+                        <div className="flex justify-center gap-2">
+                          <span className="bg-white/20 px-2 py-1 rounded-full text-xs">主角神煞</span>
+                          <span className="bg-white/20 px-2 py-1 rounded-full text-xs">数据碎片</span>
+                          <span className="bg-white/20 px-2 py-1 rounded-full text-xs">时间神煞</span>
+                        </div>
                       </div>
-                      <div className="text-base opacity-90 font-medium">
-                        传统命理学 × 现代游戏技术
+                    </Link>
+                    
+                    <Link 
+                      to="/phaser-lzore" 
+                      className="block w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white font-bold py-6 px-6 rounded-2xl shadow-2xl transform hover:scale-[1.02] transition-all duration-300 text-center relative overflow-hidden group"
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                      <div className="relative z-10">
+                        <div className="flex items-center justify-center gap-2 mb-2">
+                          <span className="text-2xl">⚔️</span>
+                          <span className="text-lg">直接战斗</span>
+                        </div>
+                        <div className="text-sm opacity-90 font-medium mb-2">
+                          跳过构筑 · 使用默认配置
+                        </div>
+                        <div className="flex justify-center gap-2">
+                          <span className="bg-white/20 px-2 py-1 rounded-full text-xs">快速开始</span>
+                          <span className="bg-white/20 px-2 py-1 rounded-full text-xs">实时战斗</span>
+                        </div>
                       </div>
-                      <div className="flex justify-center gap-3 mt-3">
-                        <span className="bg-white/20 px-3 py-1 rounded-full text-sm">Phaser 3</span>
-                        <span className="bg-white/20 px-3 py-1 rounded-full text-sm">WebGL</span>
-                        <span className="bg-white/20 px-3 py-1 rounded-full text-sm">高性能</span>
-                      </div>
-                    </div>
-                  </Link>
+                    </Link>
+                  </div>
                 </div>
               </div>
             </div>

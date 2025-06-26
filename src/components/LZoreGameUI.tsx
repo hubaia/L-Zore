@@ -60,7 +60,8 @@ export const LZoreGameUI: React.FC = () => {
         // 多目标分配状态
         targetAllocations: {} as Record<string, number>, // 每个目标的分配数值
         totalAllocated: 0, // 已分配的总数值
-        remainingValue: 0 // 剩余可分配数值
+        remainingValue: 0, // 剩余可分配数值
+        isExecuting: false // 是否正在执行中
     });
 
     // 游戏统计
@@ -96,19 +97,26 @@ export const LZoreGameUI: React.FC = () => {
             // 初始化多目标分配状态
             targetAllocations: {},
             totalAllocated: 0,
-            remainingValue: totalPower
+            remainingValue: totalPower,
+            isExecuting: false
         });
     }, [gameState.opponentRemainingElements, gameState.playerRemainingElements]);
 
     useEvent(scene.events, 'effectPanelClose', () => {
-        setEffectPanel(prev => ({ 
-            ...prev, 
-            isOpen: false,
-            selectedTarget: null,
-            targetAllocations: {},
-            totalAllocated: 0,
-            remainingValue: prev.currentValue
-        }));
+        console.log('🔄 React UI: 收到effectPanelClose事件，关闭面板');
+        console.log('🔍 React UI: 当前面板状态 - isOpen:', effectPanel.isOpen, 'isExecuting:', effectPanel.isExecuting);
+        setEffectPanel(prev => {
+            console.log('🔄 React UI: 设置面板为关闭状态');
+            return {
+                ...prev, 
+                isOpen: false,
+                selectedTarget: null,
+                targetAllocations: {},
+                totalAllocated: 0,
+                remainingValue: prev.currentValue,
+                isExecuting: false
+            };
+        });
     }, []);
 
     // 监听目标数据更新
@@ -137,6 +145,7 @@ export const LZoreGameUI: React.FC = () => {
     // 移除已废弃的单目标处理函数，现在使用多目标分配系统
 
     const handleEffectCancel = () => {
+        console.log('🔄 React UI: 手动取消，发送effectPanelClose事件');
         scene.events.emit('effectPanelClose');
         setEffectPanel(prev => ({ 
             ...prev, 
@@ -144,7 +153,8 @@ export const LZoreGameUI: React.FC = () => {
             selectedTarget: null,
             targetAllocations: {},
             totalAllocated: 0,
-            remainingValue: prev.currentValue
+            remainingValue: prev.currentValue,
+            isExecuting: false
         }));
     };
 
@@ -182,6 +192,8 @@ export const LZoreGameUI: React.FC = () => {
             return;
         }
 
+        console.log('🎯 React UI: 发送多目标执行事件到Phaser');
+
         // 发送多目标执行效果事件到Phaser
         scene.events.emit('executeMultiTargetEffect', {
             cardData: effectPanel.cardData,
@@ -190,8 +202,38 @@ export const LZoreGameUI: React.FC = () => {
             targets: effectPanel.targets
         });
 
-        // 关闭面板
-        handleEffectCancel();
+        // 显示执行中状态
+        setEffectPanel(prev => ({ 
+            ...prev, 
+            isExecuting: true
+        }));
+
+        // 设置超时保护机制，1.5秒后强制关闭（快速响应）
+        const timeoutId = setTimeout(() => {
+            console.log('⏰ React UI: 执行超时，检查当前状态...');
+            setEffectPanel(prev => {
+                console.log('⏰ React UI: 超时检查 - isOpen:', prev.isOpen, 'isExecuting:', prev.isExecuting);
+                if (prev.isOpen && prev.isExecuting) {
+                    console.log('⏰ React UI: 状态异常，强制关闭面板');
+                    // 直接在React端关闭，不依赖Phaser事件
+                    return { 
+                        ...prev, 
+                        isOpen: false, 
+                        isExecuting: false,
+                        selectedTarget: null,
+                        targetAllocations: {},
+                        totalAllocated: 0,
+                        remainingValue: prev.currentValue
+                    };
+                } else {
+                    console.log('⏰ React UI: 面板状态正常，无需强制关闭');
+                }
+                return prev;
+            });
+        }, 1500);
+        
+        // 如果组件卸载，清理超时
+        return () => clearTimeout(timeoutId);
     };
 
     // 获取卡牌类型文本
@@ -586,11 +628,48 @@ export const LZoreGameUI: React.FC = () => {
 
                         {/* 🚀 终极操作控制台 */}
                         <div className="flex justify-center gap-8 pt-6">
+                            {/* 执行中状态指示器 */}
+                            {effectPanel.isExecuting && (
+                                <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] backdrop-blur-sm">
+                                    <div className="bg-gradient-to-br from-slate-800 to-slate-900 border-2 border-purple-500/80 rounded-2xl p-8 text-center">
+                                        <div className="animate-spin text-6xl mb-4">⚔️</div>
+                                        <h3 className="text-2xl font-bold text-white mb-2">执行中...</h3>
+                                
+                                {/* 添加手动关闭按钮，3秒后显示 */}
+                                <div className="mt-4 text-center">
+                                    <button 
+                                        className="text-sm bg-red-600/80 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors"
+                                        onClick={() => {
+                                            console.log('🔧 用户手动强制关闭执行中面板');
+                                            setEffectPanel(prev => ({
+                                                ...prev,
+                                                isOpen: false,
+                                                isExecuting: false,
+                                                selectedTarget: null,
+                                                targetAllocations: {},
+                                                totalAllocated: 0,
+                                                remainingValue: prev.currentValue
+                                            }));
+                                        }}
+                                    >
+                                        强制关闭
+                                    </button>
+                                </div>
+                                        <p className="text-purple-300">神煞能力正在生效，请稍候</p>
+                                        <div className="mt-4 flex justify-center gap-2">
+                                            <div className="w-3 h-3 bg-purple-500 rounded-full animate-bounce"></div>
+                                            <div className="w-3 h-3 bg-pink-500 rounded-full animate-bounce animation-delay-200"></div>
+                                            <div className="w-3 h-3 bg-cyan-500 rounded-full animate-bounce animation-delay-400"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                            
                             {/* 多目标执行按钮 */}
                             <button 
                                 className={`
                                     group relative px-8 py-4 rounded-xl font-black text-lg transition-all duration-300 transform
-                                    ${Object.keys(effectPanel.targetAllocations).length > 0 
+                                    ${Object.keys(effectPanel.targetAllocations).length > 0 && !effectPanel.isExecuting
                                         ? `${effectPanel.actionType === 'damage' 
                                             ? 'bg-gradient-to-r from-red-500 via-pink-500 to-red-600 hover:from-red-600 hover:via-pink-600 hover:to-red-700 text-white shadow-[0_0_30px_rgba(239,68,68,0.6)] hover:shadow-[0_0_50px_rgba(239,68,68,0.8)] hover:scale-110 active:scale-95' 
                                             : 'bg-gradient-to-r from-green-500 via-emerald-500 to-green-600 hover:from-green-600 hover:via-emerald-600 hover:to-green-700 text-white shadow-[0_0_30px_rgba(34,197,94,0.6)] hover:shadow-[0_0_50px_rgba(34,197,94,0.8)] hover:scale-110 active:scale-95'
@@ -599,7 +678,7 @@ export const LZoreGameUI: React.FC = () => {
                                     }
                                 `}
                                 onClick={handleMultiTargetExecute}
-                                disabled={Object.keys(effectPanel.targetAllocations).length === 0}
+                                disabled={Object.keys(effectPanel.targetAllocations).length === 0 || effectPanel.isExecuting}
                             >
                                 {/* 按钮内部发光效果 */}
                                 {Object.keys(effectPanel.targetAllocations).length > 0 && (
@@ -612,13 +691,16 @@ export const LZoreGameUI: React.FC = () => {
                                 )}
                                 
                                 <div className="relative flex items-center gap-3">
-                                    <span className={`text-3xl ${Object.keys(effectPanel.targetAllocations).length > 0 ? 'group-hover:animate-bounce' : ''}`}>
-                                        {effectPanel.actionType === 'damage' ? '💥' : '✨'}
+                                    <span className={`text-3xl ${effectPanel.isExecuting ? 'animate-spin' : (Object.keys(effectPanel.targetAllocations).length > 0 ? 'group-hover:animate-bounce' : '')}`}>
+                                        {effectPanel.isExecuting ? '⏳' : (effectPanel.actionType === 'damage' ? '💥' : '✨')}
                                     </span>
                                     <span className="tracking-wide">
-                                        {effectPanel.actionType === 'damage' ? '执行多目标攻击' : '执行多目标增益'}
+                                        {effectPanel.isExecuting 
+                                            ? '正在执行中...' 
+                                            : (effectPanel.actionType === 'damage' ? '执行多目标攻击' : '执行多目标增益')
+                                        }
                                     </span>
-                                    {Object.keys(effectPanel.targetAllocations).length > 0 && (
+                                    {!effectPanel.isExecuting && Object.keys(effectPanel.targetAllocations).length > 0 && (
                                         <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
                                     )}
                                 </div>
@@ -633,8 +715,9 @@ export const LZoreGameUI: React.FC = () => {
                             
                             {/* 取消按钮 */}
                             <button 
-                                className="group relative bg-gradient-to-r from-slate-600 via-slate-700 to-slate-600 hover:from-slate-700 hover:via-slate-800 hover:to-slate-700 text-white px-8 py-4 rounded-xl font-black text-lg border-2 border-slate-500/60 hover:border-slate-400/80 transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(71,85,105,0.4)] hover:shadow-[0_0_30px_rgba(71,85,105,0.6)]"
+                                className={`group relative bg-gradient-to-r from-slate-600 via-slate-700 to-slate-600 hover:from-slate-700 hover:via-slate-800 hover:to-slate-700 text-white px-8 py-4 rounded-xl font-black text-lg border-2 border-slate-500/60 hover:border-slate-400/80 transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(71,85,105,0.4)] hover:shadow-[0_0_30px_rgba(71,85,105,0.6)] ${effectPanel.isExecuting ? 'opacity-50 cursor-not-allowed' : ''}`}
                                 onClick={handleEffectCancel}
+                                disabled={effectPanel.isExecuting}
                             >
                                 {/* 扫描线效果 */}
                                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -skew-x-12 translate-x-[-100%] group-hover:translate-x-[200%] transition-transform duration-700 rounded-xl"></div>

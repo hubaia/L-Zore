@@ -7,6 +7,21 @@ import { RealtimeSystemManager } from '../managers/RealtimeSystemManager';
 import { BackgroundRenderManager } from '../managers/BackgroundRenderManager';
 import { UIManager } from '../managers/UIManager';
 import { BattlefieldManager } from '../managers/BattlefieldManager';
+import { AudioManager } from '../managers/AudioManager';
+import { EffectPanelManager } from '../managers/EffectPanelManager';
+import { SettlementManager } from '../managers/SettlementManager';
+import { EventBridgeManager } from '../managers/EventBridgeManager';
+import { BaziCalculationManager } from '../managers/BaziCalculationManager';
+import { TargetManager } from '../managers/TargetManager';
+import { CardManager } from '../managers/CardManager';
+import { GameStateManager } from '../managers/GameStateManager';
+import { NeutralizationManager } from '../managers/NeutralizationManager';
+import { OpponentAIManager } from '../managers/OpponentAIManager';
+import { KeyboardManager } from '../managers/KeyboardManager';
+import { AssetManager } from '../managers/AssetManager';
+import { ReactEventManager } from '../managers/ReactEventManager';
+import { UtilityManager } from '../managers/UtilityManager';
+import { LifeElementManager } from '../managers/LifeElementManager';
 
 /**
  * L-Zore神煞卡牌游戏场景 - 重构版本
@@ -22,215 +37,232 @@ export class LZoreGameScene extends Phaser.Scene {
     private opponentHand!: Phaser.GameObjects.Group;
     private placedCards: Phaser.GameObjects.Container[] = [];
     
-    // 弃牌堆系统
+    // 弃牌堆系统（暂时保留，将逐步迁移到管理器）
     private discardPile: LZoreCard[] = [];
     private opponentDiscardPile: LZoreCard[] = [];
     
     // 效果面板系统
-    private effectPanel: Phaser.GameObjects.Container | null = null;
     private isEffectPanelOpen: boolean = false;
+    private effectPanelTimeoutId: Phaser.Time.TimerEvent | null = null;
     
-    // AI对手系统
+    // AI对手系统（暂时保留，将逐步迁移到管理器）
     private opponentCards: LZoreCard[] = [];
-    private opponentPlacedCards: Phaser.GameObjects.Container[] = [];
     
     // 管理器系统
     private realtimeManager!: RealtimeSystemManager;
     private backgroundManager!: BackgroundRenderManager;
     private uiManager!: UIManager;
     private battlefieldManager!: BattlefieldManager;
+    private audioManager!: AudioManager;
+    private effectPanelManager!: EffectPanelManager;
+    private settlementManager!: SettlementManager;
+    private eventBridgeManager!: EventBridgeManager;
+    private baziCalculationManager!: BaziCalculationManager;
+    private targetManager!: TargetManager;
+    private cardManager!: CardManager;
+    private gameStateManager!: GameStateManager;
+    private neutralizationManager!: NeutralizationManager;
+    private opponentAIManager!: OpponentAIManager;
+    private keyboardManager!: KeyboardManager;
+    private assetManager!: AssetManager;
+    private reactEventManager!: ReactEventManager;
+    private utilityManager!: UtilityManager;
+    private lifeElementManager!: LifeElementManager;
     
     // phaser-react-ui 接口
     private ui!: Interface;
     
-    // 音频系统
-    private battleBGM: Phaser.Sound.BaseSound | null = null;
+    // Web Audio API 音频系统（保留引用，主要功能已移至AudioManager）
+    private audioContext: AudioContext | null = null;
+    private audioBuffer: AudioBuffer | null = null;
 
     constructor() {
         super({ key: 'LZoreGameScene' });
     }
 
     preload() {
-        // 预加载神煞卡牌资源
-        this.loadCardAssets();
+        console.log('🔄 开始preload过程');
         
-        // 加载粒子效果资源
-        this.loadParticleAssets();
+        // 延迟发射事件，确保React组件的事件监听器已设置
+        this.time.delayedCall(100, () => {
+            console.log('📊 发射30%进度事件');
+            this.events.emit('loadingProgress', 30, '正在生成游戏纹理...');
+            
+            // 创建资源管理器并生成游戏纹理（临时创建，稍后会在管理器初始化时正式创建）
+            const tempAssetManager = new AssetManager(this);
+            tempAssetManager.createAllGameTextures();
+        });
         
-        // 预加载背景音乐
-        this.loadAudioAssets();
+        this.time.delayedCall(500, () => {
+            console.log('📊 发射50%进度事件');
+            this.events.emit('loadingProgress', 50, '正在准备音频资源...');
+            
+            // 音频资源将在AudioManager中处理
+            console.log('🎵 音频资源将在管理器初始化时加载');
+        });
+        
+        this.time.delayedCall(1000, () => {
+            console.log('📊 发射70%进度事件');
+            this.events.emit('loadingProgress', 70, '正在初始化游戏系统...');
+        });
+        
+        this.time.delayedCall(1500, () => {
+            console.log('📊 发射85%进度事件');
+            this.events.emit('loadingProgress', 85, '资源加载完成，正在初始化...');
+        });
     }
 
     create() {
-        // 初始化音频系统
-        this.initializeAudio();
+        console.log('🎮 开始create过程');
         
-        // 初始化游戏状态
-        this.initializeGameState();
-        
-        // 初始化管理器系统
-        this.initializeManagers();
-        
-        // 创建游戏背景
-        this.backgroundManager.createBackground();
-        
-        // 创建战场布局
-        this.battlefieldManager.createBattleField();
-        
-        // 创建卡牌数据库
-        this.createCardDatabase();
-        
-        // 创建玩家手牌区域
-        this.createPlayerHandArea();
-        
-        // 创建对手手牌区域
-        this.createOpponentHandArea();
-        
-        // 设置拖拽系统
-        this.battlefieldManager.setupDragAndDrop();
-        
-        // 创建UI界面
-        this.uiManager.createGameUI();
-        
-        // 创建粒子系统
-        this.backgroundManager.createParticleEffects();
-        
-        // 发初始手牌
-        this.dealInitialCards();
-        
-        // 启动全局位置监控系统
-        this.startGlobalPositionMonitor();
-        
-        // 添加键盘快捷键支持
-        this.setupKeyboardControls();
-        
-        // 初始化phaser-react-ui接口
-        this.initializeUI();
-        
-        // 发送游戏就绪事件
-        this.events.emit('gameReady');
-        
-        // 延迟显示音频提示，确保UI系统已就绪
-        this.time.delayedCall(1000, () => {
-            if (this.uiManager) {
-                this.uiManager.showMessage('🎵 按M键启动/控制背景音乐', 'warning');
-            }
-        });
-    }
-
-    /**
-     * 加载粒子效果资源
-     */
-    private loadParticleAssets() {
-        // 创建粒子纹理
-        const graphics = this.add.graphics();
-        graphics.fillStyle(0xffffff);
-        graphics.fillCircle(0, 0, 8);
-        graphics.generateTexture('particle', 16, 16);
-        graphics.destroy();
-    }
-
-    /**
-     * 加载音频资源
-     */
-    private loadAudioAssets() {
-        console.log('🎵 开始加载音频资源...');
-        
-        // 加载虚拟人格对抗背景音乐 - 使用正确的public路径
-        this.load.audio('bgm_battle', '/Audio/BGM/Battle/虚拟人格对抗.mp3');
-        
-        // 添加音频加载事件监听
-        this.load.on('filecomplete-audio-bgm_battle', () => {
-            console.log('✅ BGM音频文件加载成功');
-        });
-        
-        this.load.on('loaderror', (file: any) => {
-            if (file.key === 'bgm_battle') {
-                console.error('❌ BGM音频文件加载失败:', file);
-            }
-        });
-        
-        // TODO: 等待音效文件创建后再添加
-        // this.load.audio('card_place', 'src/asset/audio/SFX/Card/card_place.wav');
-        // this.load.audio('card_draw', 'src/asset/audio/SFX/Card/card_draw.wav');
-    }
-
-    /**
-     * 加载卡牌资源
-     */
-    private loadCardAssets() {
-        // 创建程序化生成的卡牌纹理
-        this.load.on('complete', () => {
-            this.createCardTextures();
-        });
-    }
-
-    /**
-     * 创建卡牌纹理
-     */
-    private createCardTextures() {
-        const { CARD_WIDTH, CARD_HEIGHT } = GAME_CONFIG;
-        
-        // 吉神卡 - 霓虹青色
-        this.createCyberpunkCard('card-auspicious', CARD_WIDTH, CARD_HEIGHT, 0x00ffff, 0x00cccc);
-        
-        // 凶神卡 - 霓虹粉色
-        this.createCyberpunkCard('card-inauspicious', CARD_WIDTH, CARD_HEIGHT, 0xff00ff, 0xcc00cc);
-        
-        // 特殊神煞卡 - 霓虹紫色
-        this.createCyberpunkCard('card-special', CARD_WIDTH, CARD_HEIGHT, 0x9900ff, 0x7700cc);
-        
-        // 卡牌背面 - 霓虹蓝色
-        this.createCyberpunkCard('card-back', CARD_WIDTH, CARD_HEIGHT, 0x0066ff, 0x0044cc);
-    }
-    
-    /**
-     * 创建赛博朋克风格卡牌
-     */
-    private createCyberpunkCard(key: string, width: number, height: number, mainColor: number, borderColor: number) {
-        const graphics = this.add.graphics();
-        
-        // 卡牌主体 - 深色背景
-        graphics.fillStyle(0x0f0f23);
-        graphics.fillRect(0, 0, width, height);
-        
-        // 霓虹边框 - 多层发光效果
-        graphics.lineStyle(4, borderColor, 0.3);
-        graphics.strokeRect(0, 0, width, height);
-        
-        graphics.lineStyle(2, mainColor, 0.6);
-        graphics.strokeRect(1, 1, width - 2, height - 2);
-        
-        graphics.lineStyle(1, 0xffffff, 0.8);
-        graphics.strokeRect(2, 2, width - 4, height - 4);
-        
-        graphics.generateTexture(key, width, height);
-        graphics.destroy();
-    }
-
-    /**
-     * 初始化音频系统
-     */
-    private initializeAudio() {
-        try {
-            // 设置音频参数
-            if (this.sound) {
-                this.sound.mute = false;
-                this.sound.volume = 0.7; // 设置适中的音量
-            }
+        // 延迟执行，确保preload阶段完成
+        this.time.delayedCall(2000, () => {
+            console.log('📊 发射87%进度事件');
+            this.events.emit('loadingProgress', 87, '正在初始化游戏系统...');
             
-            // 创建背景音乐但不立即播放
-            this.battleBGM = this.sound.add('bgm_battle', {
-                loop: true,
-                volume: 0.4 // 背景音乐音量稍低
+            // 初始化音频系统
+            this.initializeAudio();
+            
+            // 初始化游戏状态
+            this.initializeGameState();
+            
+            // 初始化管理器系统
+            this.initializeManagers();
+            
+            this.time.delayedCall(500, () => {
+                console.log('📊 发射90%进度事件');
+                this.events.emit('loadingProgress', 90, '正在创建游戏背景...');
+                
+                // 创建游戏背景
+                this.backgroundManager.createBackground();
+                
+                // 创建战场布局
+                this.battlefieldManager.createBattleField();
+                
+                                    this.time.delayedCall(300, () => {
+                        console.log('📊 发射92%进度事件');
+                        this.events.emit('loadingProgress', 92, '正在准备卡牌系统...');
+                        
+                        // 创建卡牌数据库
+                        this.createCardDatabase();
+                        
+                        // 创建玩家手牌区域
+                        this.createPlayerHandArea();
+                        
+                        // 创建对手手牌区域
+                        this.createOpponentHandArea();
+                        
+                        // 设置管理器之间的依赖关系（在hand groups创建之后）
+                        this.setupManagerDependencies();
+                        
+                        // 设置拖拽系统
+                        this.battlefieldManager.setupDragAndDrop();
+                        
+                        this.time.delayedCall(300, () => {
+                            console.log('📊 发射95%进度事件');
+                            this.events.emit('loadingProgress', 95, '正在初始化UI界面...');
+                            
+                            // 创建UI界面
+                            this.uiManager.createGameUI();
+                            
+                            // 创建粒子系统
+                            this.backgroundManager.createParticleEffects();
+                            
+                            this.time.delayedCall(300, () => {
+                                console.log('📊 发射97%进度事件');
+                                this.events.emit('loadingProgress', 97, '正在发放初始手牌...');
+                                
+                                // 发初始手牌 - 使用CardManager
+                                this.cardManager.dealInitialCards();
+                                
+                                // 启动全局位置监控系统
+                                this.utilityManager.startGlobalPositionMonitor(() => this.updateCardHoverEffects());
+                                
+                                // 添加键盘快捷键支持 - 使用KeyboardManager
+                                this.keyboardManager.setupKeyboardControls({
+                                    toggleAudio: () => this.audioManager.toggleAudio(),
+                                    restartGame: () => this.restartGame(),
+                                    useSpecialAbility: () => this.useSpecialAbility(),
+                                    drawCard: () => this.drawCard(),
+                                    pauseGame: () => this.keyboardManager.pauseGame()
+                                });
+                            
+                            this.time.delayedCall(300, () => {
+                                console.log('📊 发射99%进度事件');
+                                this.events.emit('loadingProgress', 99, '正在启动游戏系统...');
+                                
+                                // 初始化phaser-react-ui接口
+                                this.initializeUI();
+                                
+                                // 延迟发送游戏就绪事件，确保所有资源完全加载
+                                this.time.delayedCall(500, () => {
+                                    console.log('🎮 发射gameReady事件');
+                                    this.events.emit('gameReady');
+                                    
+                                    // 延迟自动尝试播放背景音乐
+                                    this.time.delayedCall(1500, async () => {
+                                        await this.audioManager.initWebAudioAPI();
+                                        this.audioManager.autoStartBackgroundMusic();
+                                    });
+                                });
+                            });
+                        });
+                    });
+                });
             });
+        });
+    }
+
+    // 资源加载方法已移至AssetManager
+
+    /**
+     * 初始化Web Audio API
+     */
+    private async initWebAudioAPI() {
+        try {
+            console.log('🎵 创建AudioContext...');
+            // 创建AudioContext
+            this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+            console.log('✅ AudioContext创建成功');
             
-            console.log('🎵 音频系统已初始化，按M键启动背景音乐');
+            // 异步加载音频文件
+            const audioUrl = '/Audio/BGM/Battle/虚拟人格对抗 (1).mp3';
+            console.log(`🎵 开始获取音频文件: ${audioUrl}`);
+            
+            // 设置fetch超时
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10秒超时
+            
+            const response = await fetch(audioUrl, { signal: controller.signal });
+            clearTimeout(timeoutId);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            console.log('✅ 音频文件获取成功，开始解码...');
+            const arrayBuffer = await response.arrayBuffer();
+            console.log(`📊 音频文件大小: ${(arrayBuffer.byteLength / 1024 / 1024).toFixed(2)}MB`);
+            
+            this.audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
+            console.log('✅ Web Audio API初始化成功，音频已解码');
             
         } catch (error) {
-            console.warn('音频初始化警告:', error);
-            // 如果音频初始化失败，不影响游戏进行
+            if (error instanceof Error && error.name === 'AbortError') {
+                console.error('❌ 音频加载超时（10秒）');
+            } else {
+                console.error('❌ Web Audio API初始化失败:', error);
+            }
+            // 不阻塞游戏继续运行
         }
+    }
+
+    /**
+     * 初始化音频系统 - 使用AudioManager
+     */
+    private initializeAudio() {
+        console.log('🎵 音频系统已准备完毕，将在游戏加载完成后自动尝试播放');
+        // 音频初始化已移至AudioManager
     }
 
 
@@ -241,6 +273,9 @@ export class LZoreGameScene extends Phaser.Scene {
     private initializeGameState() {
         this.gameState = { ...INITIAL_GAME_STATE };
         this.gameState.gamePhase = 'realtime'; // 直接进入实时模式
+        
+        // 尝试从localStorage读取构筑数据
+        this.loadDeckBuilderData();
         
         // 确保元素数量正确初始化为8枚
         this.gameState.playerRemainingElements = 8;
@@ -254,6 +289,54 @@ export class LZoreGameScene extends Phaser.Scene {
     }
 
     /**
+     * 从localStorage加载构筑数据
+     */
+    private loadDeckBuilderData() {
+        try {
+            // 读取玩家八字
+            const savedBazi = localStorage.getItem('playerBazi');
+            if (savedBazi) {
+                const parsedBazi = JSON.parse(savedBazi);
+                this.gameState.playerBazi = parsedBazi;
+                console.log('🔮 已加载构筑的玩家八字:', this.getBaZiDisplayText(parsedBazi));
+            } else {
+                console.log('📝 未找到构筑八字，使用默认八字');
+            }
+            
+            // 读取构筑的卡组数据
+            const savedDeck = localStorage.getItem('builtDeck');
+            if (savedDeck) {
+                const parsedDeck = JSON.parse(savedDeck) as LZoreCard[];
+                
+                // 更新卡牌数据库，使用构筑时计算好的生命元素
+                this.cardDatabase = parsedDeck;
+                console.log('🎴 已加载构筑的卡组数据');
+                
+                // 统计构筑结果
+                const cardsWithElements = parsedDeck.filter(card => 
+                    (card.currentLifeElements || 0) > 0
+                ).length;
+                console.log(`📊 构筑统计: ${cardsWithElements}/${parsedDeck.length} 张卡牌满足条件`);
+                
+                // 显示构筑的神煞状态
+                parsedDeck.forEach(card => {
+                    if ((card.currentLifeElements || 0) > 0) {
+                        const elementType = card.lifeElementGeneration?.elementType || '未知';
+                        console.log(`⭐ ${card.name}: ${card.currentLifeElements}/${card.maxLifeElements} ${elementType}元素`);
+                    }
+                });
+            } else {
+                console.log('📝 未找到构筑卡组，使用默认卡组');
+                this.cardDatabase = [...CARD_DATABASE];
+            }
+        } catch (error) {
+            console.error('❌ 加载构筑数据失败:', error);
+            console.log('📝 使用默认游戏配置');
+            this.cardDatabase = [...CARD_DATABASE];
+        }
+    }
+
+    /**
      * 获取八字显示文本
      */
     private getBaZiDisplayText(bazi: any): string {
@@ -264,8 +347,99 @@ export class LZoreGameScene extends Phaser.Scene {
      * 初始化管理器系统
      */
     private initializeManagers() {
+        console.log('🔧 开始初始化管理器系统...');
+        
         // 初始化UI管理器
         this.uiManager = new UIManager(this, this.gameState);
+        
+        // 初始化音频管理器
+        this.audioManager = new AudioManager(this);
+        
+        // 初始化资源管理器
+        this.assetManager = new AssetManager(this);
+        
+        // 初始化游戏状态管理器
+        this.gameStateManager = new GameStateManager(
+            this,
+            this.gameState,
+            (text, type) => this.uiManager.showMessage(text, type)
+        );
+        
+        // 初始化卡牌管理器
+        this.cardManager = new CardManager(
+            this,
+            this.gameState,
+            (text, type) => this.uiManager.showMessage(text, type)
+        );
+        
+        // 初始化元素中和管理器
+        this.neutralizationManager = new NeutralizationManager(
+            this,
+            (text, type) => this.uiManager.showMessage(text, type)
+        );
+        
+        // 初始化对手AI管理器
+        this.opponentAIManager = new OpponentAIManager(
+            this,
+            this.gameState,
+            (text, type) => this.uiManager.showMessage(text, type)
+        );
+        
+        // 初始化键盘管理器
+        this.keyboardManager = new KeyboardManager(
+            this,
+            this.gameState,
+            (text, type) => this.uiManager.showMessage(text, type)
+        );
+        
+        // 初始化工具管理器
+        this.utilityManager = new UtilityManager(
+            this,
+            (text, type) => this.uiManager.showMessage(text, type)
+        );
+        
+        // 初始化生命元素管理器
+        this.lifeElementManager = new LifeElementManager(
+            this,
+            this.gameState,
+            this.baziCalculationManager,
+            (text, type) => this.uiManager.showMessage(text, type)
+        );
+        
+        // 初始化React事件管理器
+        this.reactEventManager = new ReactEventManager(
+            this,
+            {
+                showMessage: (text, type) => this.uiManager.showMessage(text, type),
+                updateGameStateUI: () => this.updateGameStateUI(),
+                checkElementNeutralization: () => this.checkElementNeutralization(),
+                moveToDiscardPile: (card) => this.moveToDiscardPile(card),
+                closeEffectPanel: () => this.closeEffectPanel(),
+                startDamageSettlement: (cardData, actionType, targetCount, totalValue) => 
+                    this.startDamageSettlement(cardData, actionType, targetCount, totalValue),
+                onGameEnd: (winner) => this.gameStateManager.onGameEnd(winner),
+                getGameState: () => this.gameState,
+                getEffectPanelStatus: () => this.isEffectPanelOpen,
+                setEffectPanelStatus: (status) => { this.isEffectPanelOpen = status; }
+            }
+        );
+        
+        // 初始化事件桥接管理器
+        this.eventBridgeManager = new EventBridgeManager(this, this.uiManager);
+        
+        // 初始化八字计算管理器
+        this.baziCalculationManager = new BaziCalculationManager(this);
+        
+        // 初始化目标管理器
+        this.targetManager = new TargetManager(this);
+        this.targetManager.setPlacedCards(this.placedCards);
+        
+        // 初始化效果面板管理器
+        this.effectPanelManager = new EffectPanelManager(this, this.uiManager);
+        this.effectPanelManager.setTargetCollector((actionType) => this.targetManager.collectAllTargets(actionType));
+        
+        // 初始化结算管理器
+        this.settlementManager = new SettlementManager(this, this.uiManager);
         
         // 初始化即时系统管理器
         this.realtimeManager = new RealtimeSystemManager(
@@ -273,7 +447,8 @@ export class LZoreGameScene extends Phaser.Scene {
             this.gameState,
             (text, type) => this.uiManager.showMessage(text, type),
             () => this.updateGameStateUI(),
-            () => this.autoDrawCards()
+            () => this.autoDrawCards(),
+            () => this.generateLifeElementsPerTurn()
         );
         
         // 初始化背景渲染管理器
@@ -289,6 +464,29 @@ export class LZoreGameScene extends Phaser.Scene {
         
         // 启动实时系统
         this.realtimeManager.startRealtimeSystem();
+        
+        console.log('✅ 管理器系统初始化完成');
+    }
+
+    /**
+     * 设置管理器之间的依赖关系
+     */
+    private setupManagerDependencies() {
+        // 设置卡牌管理器的手牌组引用
+        this.cardManager.setHandGroups(this.playerHand, this.opponentHand);
+        
+        // 设置游戏状态管理器的八字计算管理器引用
+        this.gameStateManager.setBaziCalculationManager(this.baziCalculationManager);
+        
+        // 设置对手AI管理器的引用
+        this.opponentAIManager.setOpponentHand(this.opponentHand);
+        this.opponentAIManager.setPlacedCards(this.placedCards);
+        this.opponentAIManager.setOpponentCards(this.opponentCards);
+        
+        // 设置工具管理器的背景管理器引用
+        this.utilityManager.setBackgroundManager(this.backgroundManager);
+        
+        console.log('🔗 管理器依赖关系设置完成');
     }
 
     /**
@@ -316,6 +514,15 @@ export class LZoreGameScene extends Phaser.Scene {
         console.log('放置后手牌数量:', this.playerHand.children.entries.length);
         console.log('放置后场上卡牌数量:', this.placedCards.length);
         
+        // 检查神煞出现条件并生成生命元素
+        const generatedElements = this.lifeElementManager.generateLifeElementsOnPlacement(cardData, 'player');
+        if (generatedElements > 0) {
+            console.log(`🌟 ${cardData.name} 生成了 ${generatedElements} 枚生命元素`);
+            
+            // 更新卡牌视觉显示（在CardManager中处理）
+            this.cardManager.updateCardLifeElements(card, cardData);
+        }
+        
         // 获得优先权
         this.realtimeManager.gainPriority('player');
         
@@ -333,13 +540,13 @@ export class LZoreGameScene extends Phaser.Scene {
         // 时停检查：如果游戏暂停则跳过自动抽卡
         if (this.gameState.isPaused) return;
         
-        // 双方同时自动抽卡
+        // 双方同时自动抽卡 - 使用CardManager
         if (this.playerHand.children.entries.length < 7) {
-            this.drawCard();
+            this.cardManager.drawCard();
         }
         
         if (this.opponentHand.children.entries.length < 7) {
-            this.drawOpponentCard();
+            this.cardManager.drawOpponentCard();
         }
     }
 
@@ -347,7 +554,13 @@ export class LZoreGameScene extends Phaser.Scene {
      * 创建卡牌数据库
      */
     private createCardDatabase() {
-        this.cardDatabase = [...CARD_DATABASE];
+        // 如果已经在loadDeckBuilderData中设置了cardDatabase，则无需重新设置
+        if (!this.cardDatabase) {
+            this.cardDatabase = [...CARD_DATABASE];
+            console.log('📝 使用默认卡牌数据库');
+        } else {
+            console.log('✅ 卡牌数据库已初始化（来自构筑数据或默认设置）');
+        }
     }
 
     /**
@@ -382,20 +595,7 @@ export class LZoreGameScene extends Phaser.Scene {
         opponentHandBg.setDepth(-1);
     }
 
-    /**
-     * 发初始手牌
-     */
-    private dealInitialCards() {
-        // 玩家抽5张初始手牌
-        for (let i = 0; i < 5; i++) {
-            this.drawCard();
-        }
-        
-        // 对手抽5张初始手牌
-        for (let i = 0; i < 5; i++) {
-            this.drawOpponentCard();
-        }
-    }
+    // dealInitialCards已移至CardManager
 
     /**
      * 抽牌
@@ -406,264 +606,28 @@ export class LZoreGameScene extends Phaser.Scene {
             return null;
         }
         
-        if (this.playerHand.children.entries.length >= 7) {
-            return null; // 手牌已满
-        }
-        
-        // 从卡牌数据库中随机选择一张卡
-        const randomCard = this.cardDatabase[Math.floor(Math.random() * this.cardDatabase.length)];
-        
-        // 计算新卡牌位置
-        const handCount = this.playerHand.children.entries.length;
-        const startX = this.cameras.main.width * 0.15;
-        const cardSpacing = 110;
-        const x = startX + handCount * cardSpacing;
-        const y = this.cameras.main.height - 108; // 精确的99%显示位置
-        
-        // 创建卡牌
-        const cardContainer = this.createCard(randomCard, x, y);
-        this.playerHand.add(cardContainer);
-        
-        // TODO: 等待音效文件创建后再启用
-        // 播放抽卡音效
-        // try {
-        //     this.sound.play('card_draw', { volume: 0.3 });
-        // } catch (error) {
-        //     // 音效播放失败不影响游戏
-        // }
-        
-        // 抽卡动画
-        cardContainer.setScale(0);
-        this.tweens.add({
-            targets: cardContainer,
-            scaleX: 1,
-            scaleY: 1,
-            duration: 300,
-            ease: 'Back.easeOut'
-        });
-        
-        return cardContainer;
+        // 使用CardManager处理抽卡
+        return this.cardManager.drawCard();
     }
 
     /**
      * 对手抽牌
      */
-    private drawOpponentCard(): Phaser.GameObjects.Container | null {
-        if (this.opponentHand.children.entries.length >= 7) {
-            return null; // 手牌已满
-        }
-        
-        // 从卡牌数据库中随机选择一张卡
-        const randomCard = this.cardDatabase[Math.floor(Math.random() * this.cardDatabase.length)];
-        this.opponentCards.push(randomCard);
-        
-        // 计算新卡牌位置
-        const handCount = this.opponentHand.children.entries.length;
-        const startX = this.cameras.main.width * 0.15;
-        const cardSpacing = 110;
-        const x = startX + handCount * cardSpacing;
-        const y = 90; // 对手手牌区域
-        
-        // 创建对手卡牌（显示为卡背）
-        const cardContainer = this.createOpponentCard(randomCard, x, y);
-        this.opponentHand.add(cardContainer);
-        
-        // 抽卡动画
-        cardContainer.setScale(0);
-        this.tweens.add({
-            targets: cardContainer,
-            scaleX: 1,
-            scaleY: 1,
-            duration: 300,
-            ease: 'Back.easeOut'
-        });
-        
-        // 对手有30%几率自动使用卡牌攻击玩家
-        if (Math.random() < 0.3 && this.opponentCards.length > 0) {
-            this.time.delayedCall(2000, () => {
-                this.executeOpponentAttack();
-            });
-        }
-        
-        return cardContainer;
-    }
+    // drawOpponentCard已移至CardManager
 
     /**
      * 执行对手攻击
      */
     private executeOpponentAttack() {
-        if (this.opponentCards.length === 0) return;
-        
-        // 随机选择一张卡牌
-        const randomIndex = Math.floor(Math.random() * this.opponentCards.length);
-        const attackCard = this.opponentCards[randomIndex];
-        
-        // 对玩家造成伤害
-        const damage = Math.min(attackCard.power, this.gameState.playerRemainingElements);
-        this.gameState.playerRemainingElements -= damage;
-        
-        this.uiManager.showMessage(`对手使用 ${attackCard.name}！你失去${damage}枚元素，剩余${this.gameState.playerRemainingElements}枚`, 'error');
-        
-        // 检查玩家是否败北
-        if (this.gameState.playerRemainingElements <= 0) {
-            this.onGameEnd('opponent');
-            return;
-        }
-        
-        // 移除使用的卡牌
-        this.opponentCards.splice(randomIndex, 1);
-        
-        // 移除对应的手牌显示
-        if (this.opponentHand.children.entries[randomIndex]) {
-            const cardToRemove = this.opponentHand.children.entries[randomIndex] as Phaser.GameObjects.Container;
-            this.opponentHand.remove(cardToRemove);
-            cardToRemove.destroy();
-        }
-        
-        // 更新UI
-        this.updateGameStateUI();
-    }
-
-    /**
-     * 创建卡牌容器
-     */
-    private createCard(cardData: LZoreCard, x: number, y: number): Phaser.GameObjects.Container {
-        const { CARD_WIDTH, CARD_HEIGHT } = GAME_CONFIG;
-        const container = this.add.container(x, y);
-        
-        // 获取卡牌背景纹理
-        const cardTexture = this.getCyberpunkCardTexture(cardData.type);
-        const cardBg = this.add.image(0, 0, cardTexture);
-        cardBg.setDisplaySize(CARD_WIDTH, CARD_HEIGHT);
-        container.add(cardBg);
-        
-        // 卡牌标题
-        const title = this.add.text(0, -CARD_HEIGHT / 2 + 20, cardData.name, {
-            fontSize: '14px',
-            color: '#ffffff',
-            fontStyle: 'bold'
-        });
-        title.setOrigin(0.5);
-        container.add(title);
-        
-        // 卡牌效果描述
-        const effectText = this.add.text(0, 10, cardData.effect || '', {
-            fontSize: '10px',
-            color: '#88ffff',
-            fontStyle: 'bold',
-            wordWrap: { width: CARD_WIDTH - 20 }
-        });
-        effectText.setOrigin(0.5);
-        container.add(effectText);
-        
-        // 存储卡牌数据
-        container.setData('cardData', cardData);
-        container.setData('originalX', x);
-        container.setData('originalY', y);
-        
-        // 设置交互
-        container.setSize(CARD_WIDTH, CARD_HEIGHT);
-        container.setInteractive();
-        this.input.setDraggable(container);
-        
-        // 设置悬停效果
-        this.setupCardHoverEffects(container);
-        
-        return container;
-    }
-
-    /**
-     * 创建对手卡牌
-     */
-    private createOpponentCard(cardData: LZoreCard, x: number, y: number): Phaser.GameObjects.Container {
-        const { CARD_WIDTH, CARD_HEIGHT } = GAME_CONFIG;
-        const container = this.add.container(x, y);
-        
-        // 对手卡牌显示为卡背
-        const cardBg = this.add.image(0, 0, 'card-back');
-        cardBg.setDisplaySize(CARD_WIDTH, CARD_HEIGHT);
-        container.add(cardBg);
-        
-        // 存储卡牌数据
-        container.setData('cardData', cardData);
-        container.setData('originalX', x);
-        container.setData('originalY', y);
-        
-        container.setSize(CARD_WIDTH, CARD_HEIGHT);
-        
-        return container;
-    }
-
-    /**
-     * 获取赛博朋克卡牌纹理
-     */
-    private getCyberpunkCardTexture(type: string): string {
-        switch (type) {
-            case 'auspicious': return 'card-auspicious';
-            case 'inauspicious': return 'card-inauspicious';
-            case 'special': return 'card-special';
-            default: return 'card-back';
-        }
-    }
-
-    /**
-     * 设置卡牌悬停效果
-     */
-    private setupCardHoverEffects(cardContainer: Phaser.GameObjects.Container) {
-        const originalScale = cardContainer.scaleX;
-        const originalY = cardContainer.y;
-        
-        cardContainer.on('pointerover', () => {
-            // 悬停时放大并上移
-            this.tweens.add({
-                targets: cardContainer,
-                scaleX: originalScale * 1.1,
-                scaleY: originalScale * 1.1,
-                y: originalY - 20,
-                duration: 200,
-                ease: 'Power2'
-            });
-            
-            // 设置高层级显示
-            cardContainer.setDepth(100);
-        });
-        
-        cardContainer.on('pointerout', () => {
-            // 恢复原状
-            this.tweens.add({
-                targets: cardContainer,
-                scaleX: originalScale,
-                scaleY: originalScale,
-                y: originalY,
-                duration: 200,
-                ease: 'Power2'
-            });
-            
-            cardContainer.setDepth(0);
+        // 使用OpponentAIManager处理对手攻击
+        this.opponentAIManager.executeOpponentAttack({
+            updateGameStateUI: () => this.updateGameStateUI(),
+            onGameEnd: (winner) => this.gameStateManager.onGameEnd(winner)
         });
     }
 
-    /**
-     * 触发自动放置效果
-     */
-    private triggerAutoPlace(cardContainer: Phaser.GameObjects.Container) {
-        // 创建放置特效
-        this.backgroundManager.createForceEffect(cardContainer);
-        
-        this.uiManager.showMessage('🎯 卡牌已放置！获得优先权！', 'success');
-    }
-
-    /**
-     * 启动全局位置监控系统
-     */
-    private startGlobalPositionMonitor() {
-        this.time.addEvent({
-            delay: 16, // 60 FPS
-            callback: this.updateCardHoverEffects,
-            callbackScope: this,
-            loop: true
-        });
-    }
+    // 卡牌创建和相关方法已移至CardManager
+    // 工具方法已移至UtilityManager
 
     /**
      * 更新卡牌悬停效果
@@ -673,121 +637,21 @@ export class LZoreGameScene extends Phaser.Scene {
         // 这里可以添加更多的动态效果
     }
 
-    /**
-     * 添加键盘快捷键支持
-     */
-    private setupKeyboardControls() {
-        // D键 - 抽牌
-        this.input.keyboard!.on('keydown-D', () => {
-            if (!this.gameState.isPaused && !this.isEffectPanelOpen) {
-                this.drawCard();
-            } else if (this.gameState.isPaused) {
-                this.uiManager.showMessage('⏸️ 时空暂停中，操作被禁用', 'warning');
-            }
-        });
-        
-        // S键 - 使用神煞
-        this.input.keyboard!.on('keydown-S', () => {
-            if (!this.gameState.isPaused && !this.isEffectPanelOpen) {
-                this.useSpecialAbility();
-            } else if (this.gameState.isPaused) {
-                this.uiManager.showMessage('⏸️ 时空暂停中，操作被禁用', 'warning');
-            }
-        });
-        
-        // R键 - 释放优先权
-        this.input.keyboard!.on('keydown-R', () => {
-            if (!this.gameState.isPaused && !this.isEffectPanelOpen) {
-                this.realtimeManager.releasePriority();
-            } else if (this.gameState.isPaused) {
-                this.uiManager.showMessage('⏸️ 时空暂停中，操作被禁用', 'warning');
-            }
-        });
-        
-        // M键 - 切换音乐静音
-        this.input.keyboard!.on('keydown-M', () => {
-            this.toggleAudio();
-        });
-        
-        // ESC键 - 关闭面板
-        this.input.keyboard!.on('keydown-ESC', () => {
-            if (this.isEffectPanelOpen) {
-                this.closeEffectPanel();
-            }
-        });
-    }
+    // 键盘控制已移至KeyboardManager
 
     /**
      * 使用特殊能力
      */
     useSpecialAbility() {
-        if (this.gameState.isPaused) {
-            this.uiManager.showMessage('⏸️ 时空暂停中，无法使用神煞！', 'warning');
-            return;
-        }
-        
-        if (!this.gameState.canPlayerUseCards) {
-            this.uiManager.showMessage('冷却期间无法使用神煞！', 'warning');
-            return;
-        }
-        
-        if (this.gameState.activePlayer !== 'player') {
-            this.uiManager.showMessage('需要获得优先权才能使用神煞！', 'warning');
-            return;
-        }
-        
-        // 开始冷却期
-        this.realtimeManager.startPlayerCooldown();
-        
-        this.uiManager.showMessage('🔥 神煞能力已使用！进入冷却期', 'success');
+        // 使用KeyboardManager处理特殊能力
+        this.keyboardManager.useSpecialAbility({
+            applySpecialEffect: (effectName) => this.gameStateManager.applySpecialEffect(effectName),
+            updateGameStateUI: () => this.updateGameStateUI(),
+            checkElementNeutralization: () => this.checkElementNeutralization()
+        });
     }
 
-    /**
-     * 切换音频静音状态
-     */
-    private toggleAudio() {
-        try {
-            if (this.battleBGM) {
-                if (this.battleBGM.isPlaying) {
-                    // 如果正在播放，则暂停
-                    this.battleBGM.pause();
-                    if (this.uiManager) {
-                        this.uiManager.showMessage('🔇 音乐已暂停', 'success');
-                    }
-                    console.log('背景音乐已暂停');
-                } else {
-                    // 如果没有播放，则开始播放或恢复
-                    const playResult = this.battleBGM.play();
-                    if (playResult) {
-                        if (this.uiManager) {
-                            this.uiManager.showMessage('🎵 背景音乐已启动！', 'success');
-                        }
-                        console.log('🎵 背景音乐已启动: 虚拟人格对抗');
-                    } else {
-                        // 如果是暂停状态，尝试恢复
-                        this.battleBGM.resume();
-                        if (this.uiManager) {
-                            this.uiManager.showMessage('🎵 音乐已恢复', 'success');
-                        }
-                        console.log('背景音乐已恢复');
-                    }
-                }
-            } else if (this.sound) {
-                // 备用方案：切换整个音频系统
-                this.sound.mute = !this.sound.mute;
-                const status = this.sound.mute ? '🔇 音频已静音' : '🎵 音频已开启';
-                if (this.uiManager) {
-                    this.uiManager.showMessage(status, 'success');
-                }
-                console.log(`音频状态已切换: ${this.sound.mute ? '静音' : '开启'}`);
-            }
-        } catch (error) {
-            console.warn('音频切换失败:', error);
-            if (this.uiManager) {
-                this.uiManager.showMessage('🔇 音频控制失败', 'error');
-            }
-        }
-    }
+    // 音频控制方法已移至AudioManager
 
     /**
      * 初始化phaser-react-ui接口
@@ -810,290 +674,40 @@ export class LZoreGameScene extends Phaser.Scene {
      * 设置UI事件监听器
      */
     private setupUIEventListeners() {
-        // 监听来自React UI的事件
-        this.events.on('drawCard', () => {
-            this.drawCard();
+        // 使用ReactEventManager处理UI事件
+        this.reactEventManager.setupUIEventListeners({
+            drawCard: () => this.drawCard(),
+            useSpecialAbility: () => this.useSpecialAbility(),
+            releasePriority: () => this.realtimeManager.releasePriority()
         });
-
-        this.events.on('useSpecialAbility', () => {
-            this.useSpecialAbility();
+        
+        // 监听取消效果面板超时事件
+        this.events.on('cancelEffectPanelTimeout', () => {
+            if (this.effectPanelTimeoutId) {
+                this.effectPanelTimeoutId.destroy();
+                this.effectPanelTimeoutId = null;
+                console.log('✅ 用户执行操作，已取消15秒超时计时器');
+                this.uiManager.showMessage('✅ 操作确认，超时计时器已取消', 'success');
+            }
         });
-
-        this.events.on('releasePriority', () => {
-            this.realtimeManager.releasePriority();
-        });
-
-        // 监听React发送的执行效果事件 - 使用phaser-react-ui事件系统
-        this.events.on('executeEffect', (data: {
-            cardData: LZoreCard,
-            actionType: 'damage' | 'buff',
-            target: any,
-            value: number
-        }) => {
-            this.executeEffectFromReact(data);
-        });
-
-        // 监听React发送的关闭面板事件
-        this.events.on('effectPanelClose', () => {
-            this.closeEffectPanel();
-        });
-
-        // 监听React发送的多目标执行效果事件 - phaser-react-ui事件处理
-        this.events.on('executeMultiTargetEffect', (data: {
+        
+        // 监听React UI发送的当前分配状态（用于超时处理）
+        this.events.on('currentAllocationsResponse', (data: {
             cardData: LZoreCard,
             actionType: 'damage' | 'buff',
             allocations: Record<string, number>,
             targets: any[]
         }) => {
-            this.executeMultiTargetEffectFromReact(data);
+            console.log('⏰ 收到当前分配状态，执行超时结算:', data.allocations);
+            
+            // 使用当前分配执行效果
+            this.events.emit('executeMultiTargetEffect', data);
         });
     }
 
-    /**
-     * 执行来自React的效果 - phaser-react-ui事件处理
-     */
-    private executeEffectFromReact(data: {
-        cardData: LZoreCard,
-        actionType: 'damage' | 'buff',
-        target: any,
-        value: number
-    }) {
-        const { cardData, actionType, target, value } = data;
-        
-        if (target.type === 'fieldCard') {
-            // 对场上神煞卡的效果
-            const { card, cardData: targetCardData } = target.data;
-            
-            if (actionType === 'damage') {
-                // 直接中和目标神煞卡
-                card.setData('neutralized', true);
-                card.setAlpha(0.5);
-                card.list.forEach((child: any) => {
-                    if (child.setTint) {
-                        child.setTint(0x666666);
-                    }
-                });
-                
-                this.uiManager.showMessage(`${cardData.name} 以${value}炁克元素中和了 ${targetCardData.name}！`, 'success');
-                
-                // 延迟后移入弃牌堆
-                this.time.delayedCall(1500, () => {
-                    this.moveToDiscardPile(card);
-                });
-            } else {
-                // 增益效果：强化己方神煞卡
-                const glowEffect = this.add.graphics();
-                glowEffect.lineStyle(3, 0x00ff00, 0.8);
-                glowEffect.strokeRect(card.x - 60, card.y - 90, 120, 180);
-                glowEffect.setDepth(99);
-                
-                // 标记为已强化
-                card.setData('buffed', true);
-                card.setData('buffValue', value);
-                
-                this.uiManager.showMessage(`${cardData.name} 以${value}炁克元素强化了 ${targetCardData.name}！`, 'success');
-                
-                // 移除发光效果
-                this.time.delayedCall(3000, () => {
-                    glowEffect.destroy();
-                });
-            }
-        } else if (target.type === 'bazi') {
-            // 对本命八字的效果
-            const { pillarIndex, pillarName } = target.data;
-            
-            if (actionType === 'damage') {
-                // 对对手本命八字造成伤害
-                const actualDamage = Math.min(value, this.gameState.opponentRemainingElements);
-                this.gameState.opponentRemainingElements -= actualDamage;
-                
-                this.uiManager.showMessage(`${cardData.name} 以${actualDamage}炁克元素攻击了${pillarName}！对手剩余${this.gameState.opponentRemainingElements}枚元素`, 'error');
-                
-                if (this.gameState.opponentRemainingElements <= 0) {
-                    this.onGameEnd('player');
-                    return;
-                }
-            } else {
-                // 对己方本命八字增益
-                const actualHeal = Math.min(value, 8 - this.gameState.playerRemainingElements);
-                this.gameState.playerRemainingElements += actualHeal;
-                
-                this.uiManager.showMessage(`${cardData.name} 以${actualHeal}炁克元素增益了${pillarName}！玩家剩余${this.gameState.playerRemainingElements}枚元素`, 'success');
-            }
-        }
-        
-        // 更新UI状态
-        this.updateGameStateUI();
-        
-        // 检查是否触发元素中和
-        this.checkElementNeutralization();
-    }
+    // React事件处理方法已移至ReactEventManager
 
-    /**
-     * 执行来自React的多目标效果 - phaser-react-ui事件处理
-     */
-    private executeMultiTargetEffectFromReact(data: {
-        cardData: LZoreCard,
-        actionType: 'damage' | 'buff',
-        allocations: Record<string, number>,
-        targets: any[]
-    }) {
-        const { cardData, actionType, allocations, targets } = data;
-        
-        console.log(`执行多目标${actionType === 'damage' ? '伤害' : '增益'}:`, allocations);
-        
-        // 遍历所有分配，对每个目标应用效果
-        Object.entries(allocations).forEach(([targetId, value]) => {
-            // 根据targetId找到对应的目标
-            const target = targets.find(t => t.id === targetId);
-            if (!target || value <= 0) return;
-            
-            if (target.type === 'fieldCard') {
-                // 对场上神煞卡的效果
-                const { card, cardData: targetCardData } = target.data;
-                
-                if (actionType === 'damage') {
-                    // 直接中和目标神煞卡
-                    card.setData('neutralized', true);
-                    card.setAlpha(0.5);
-                    card.list.forEach((child: any) => {
-                        if (child.setTint) {
-                            child.setTint(0x666666);
-                        }
-                    });
-                    
-                    this.uiManager.showMessage(`${cardData.name} 以${value}炁克元素中和了 ${targetCardData.name}！`, 'success');
-                    
-                    // 延迟后移入弃牌堆
-                    this.time.delayedCall(1500, () => {
-                        this.moveToDiscardPile(card);
-                    });
-                } else {
-                    // 增益效果：强化己方神煞卡
-                    const glowEffect = this.add.graphics();
-                    glowEffect.lineStyle(3, 0x00ff00, 0.8);
-                    glowEffect.strokeRect(card.x - 60, card.y - 90, 120, 180);
-                    glowEffect.setDepth(99);
-                    
-                    // 标记为已强化
-                    card.setData('buffed', true);
-                    card.setData('buffValue', value);
-                    
-                    this.uiManager.showMessage(`${cardData.name} 以${value}炁克元素强化了 ${targetCardData.name}！`, 'success');
-                    
-                    // 移除发光效果
-                    this.time.delayedCall(3000, () => {
-                        glowEffect.destroy();
-                    });
-                }
-            } else if (target.type === 'bazi') {
-                // 对本命八字的效果
-                const { pillarIndex, pillarName } = target.data;
-                
-                if (actionType === 'damage') {
-                    // 对对手本命八字造成伤害
-                    const actualDamage = Math.min(value, this.gameState.opponentRemainingElements);
-                    this.gameState.opponentRemainingElements -= actualDamage;
-                    
-                    this.uiManager.showMessage(`${cardData.name} 以${actualDamage}炁克元素攻击了${pillarName}！对手剩余${this.gameState.opponentRemainingElements}枚元素`, 'error');
-                    
-                    if (this.gameState.opponentRemainingElements <= 0) {
-                        this.onGameEnd('player');
-                        return;
-                    }
-                } else {
-                    // 对己方本命八字增益
-                    const actualHeal = Math.min(value, 8 - this.gameState.playerRemainingElements);
-                    this.gameState.playerRemainingElements += actualHeal;
-                    
-                    this.uiManager.showMessage(`${cardData.name} 以${actualHeal}炁克元素增益了${pillarName}！玩家剩余${this.gameState.playerRemainingElements}枚元素`, 'success');
-                }
-            }
-        });
-        
-        // 显示多目标执行完成消息
-        const targetCount = Object.keys(allocations).length;
-        const totalValue = Object.values(allocations).reduce((sum, val) => sum + val, 0);
-        this.uiManager.showMessage(`🎯 多目标${actionType === 'damage' ? '攻击' : '增益'}完成！影响${targetCount}个目标，总计${totalValue}炁克`, 'warning');
-        
-        // 更新UI状态
-        this.updateGameStateUI();
-        
-        // 检查是否触发元素中和
-        this.checkElementNeutralization();
-    }
-
-    /**
-     * 根据八字计算玩家能量
-     */
-    private calculatePlayerEnergy(): number {
-        // 统计玩家八字中的五行分布
-        const elements = this.countBaZiElements(this.gameState.playerBazi);
-        // 计算能量：五行平衡度越高，能量越强
-        const totalElements = Object.values(elements).reduce((sum, count) => sum + count, 0);
-        const balance = this.calculateElementBalance(elements);
-        return Math.floor((totalElements + balance) * 5); // 基础能量计算
-    }
-
-    /**
-     * 计算五行平衡度
-     */
-    private calculateElementBalance(elements: { [element: string]: number }): number {
-        const values = Object.values(elements);
-        const avg = values.reduce((sum, val) => sum + val, 0) / values.length;
-        const variance = values.reduce((sum, val) => sum + Math.pow(val - avg, 2), 0) / values.length;
-        return Math.max(0, 10 - variance); // 方差越小，平衡度越高
-    }
-
-    /**
-     * 统计八字的五行分布
-     */
-    private countBaZiElements(baZi: any): { [element: string]: number } {
-        const elementCount: { [element: string]: number } = {
-            '木': 0, '火': 0, '土': 0, '金': 0, '水': 0
-        };
-        
-        // 统计四柱的天干地支五行
-        const pillars = [baZi.year, baZi.month, baZi.day, baZi.hour];
-        
-        pillars.forEach(pillar => {
-            // 这里需要实际的天干地支五行映射逻辑
-            // 暂时使用简化版本，后续可以接入真实的八字五行计算
-            const ganElement = this.getGanElement(pillar.gan);
-            const zhiElement = this.getZhiElement(pillar.zhi);
-            
-            elementCount[ganElement] = (elementCount[ganElement] || 0) + 1;
-            elementCount[zhiElement] = (elementCount[zhiElement] || 0) + 1;
-        });
-        
-        return elementCount;
-    }
-
-    /**
-     * 获取天干对应五行
-     */
-    private getGanElement(gan: string): string {
-        const ganElements: { [key: string]: string } = {
-            '甲': '木', '乙': '木',
-            '丙': '火', '丁': '火', 
-            '戊': '土', '己': '土',
-            '庚': '金', '辛': '金',
-            '壬': '水', '癸': '水'
-        };
-        return ganElements[gan] || '土';
-    }
-
-    /**
-     * 获取地支对应五行
-     */
-    private getZhiElement(zhi: string): string {
-        const zhiElements: { [key: string]: string } = {
-            '子': '水', '丑': '土', '寅': '木', '卯': '木',
-            '辰': '土', '巳': '火', '午': '火', '未': '土',
-            '申': '金', '酉': '金', '戌': '土', '亥': '水'
-        };
-        return zhiElements[zhi] || '土';
-    }
+    // 八字计算方法已移至BaziCalculationManager
 
     /**
      * 更新游戏状态UI
@@ -1102,38 +716,12 @@ export class LZoreGameScene extends Phaser.Scene {
         // 更新本地UI
         this.uiManager.updateUI();
         
-        // 更新React UI数据
-        const gameStateData = {
-            playerHealth: this.gameState.playerRemainingElements,  // 玩家剩余元素（8枚）
-            opponentHealth: this.gameState.opponentRemainingElements,  // 对手剩余元素（8枚）
-            playerEnergy: this.calculatePlayerEnergy(),  // 根据八字计算能量
-            currentTurn: this.gameState.currentCycle,
-            playerHandCount: this.playerHand ? this.playerHand.children.entries.length : 0,
-            isPlayerTurn: this.gameState.canPlayerUseCards,
-            battlefieldCards: this.placedCards.length,
-            gameTime: this.gameState.gameTime,
-            playerCooldown: this.gameState.playerCooldownRemaining,
-            opponentCooldown: this.gameState.opponentCooldownRemaining,
-            activePlayer: this.gameState.activePlayer,
-            priorityHolder: this.gameState.priorityHolder,
-            
-            // 八字信息
-            playerBazi: this.gameState.playerBazi,
-            opponentBazi: this.gameState.opponentBazi,
-            playerRemainingElements: this.gameState.playerRemainingElements,
-            opponentRemainingElements: this.gameState.opponentRemainingElements,
-            
-            // 时停系统状态
-            isPaused: this.gameState.isPaused,
-            pauseReason: this.gameState.pauseReason,
-            
-            // 弃牌堆状态
-            discardPileCount: this.discardPile.length,
-            opponentDiscardPileCount: this.opponentDiscardPile.length
-        };
-
-        // 发送状态更新事件给React UI
-        this.events.emit('gameStateUpdate', gameStateData);
+        // 使用GameStateManager更新UI状态
+        this.gameStateManager.updateGameStateUI({
+            getPlayerHandCount: () => this.cardManager.getHandCounts().playerHandCount,
+            getPlacedCardsCount: () => this.placedCards.length,
+            getDiscardPileStatus: () => this.cardManager.getDiscardPileStatus()
+        });
     }
 
     /**
@@ -1186,11 +774,21 @@ export class LZoreGameScene extends Phaser.Scene {
         const actionType = cardData.type === 'auspicious' ? 'buff' : 'damage';
         const targets = this.collectAllTargets(actionType);
         
+        // 设置15秒超时机制
+        this.effectPanelTimeoutId = this.time.delayedCall(15000, () => {
+            console.log('⏰ 效果面板15秒超时，自动执行结算');
+            this.handleEffectPanelTimeout(cardData, actionType, targets);
+        });
+        
+        // 显示超时提示
+        this.uiManager.showMessage('⏰ 15秒后将自动执行已分配的伤害分配！', 'warning');
+        
         // 发送事件到React UI - 使用phaser-react-ui事件系统
         this.events.emit('effectPanelOpen', {
             cardData: cardData,
             sourceCard: sourceCard,
-            targets: targets
+            targets: targets,
+            timeoutDuration: 15000 // 传递超时时间给React UI
         });
     }
 
@@ -1204,6 +802,12 @@ export class LZoreGameScene extends Phaser.Scene {
             this.gameState.opponentRemainingElements -= damage;
             
             this.uiManager.showMessage(`对${this.getPillarName(targetPosition)}造成${damage}点元素伤害！对手剩余${this.gameState.opponentRemainingElements}枚元素`, 'error');
+            
+            // 战斗中生成生命元素
+            const combatElements = this.lifeElementManager.generateLifeElementsOnCombat(cardData, 'player');
+            if (combatElements > 0) {
+                console.log(`⚔️ ${cardData.name} 战斗中生成了 ${combatElements} 枚生命元素`);
+            }
             
             // 检查对手是否败北
             if (this.gameState.opponentRemainingElements <= 0) {
@@ -1305,22 +909,11 @@ export class LZoreGameScene extends Phaser.Scene {
      * 游戏结束处理
      */
     private onGameEnd(winner: 'player' | 'opponent') {
-        this.gameState.gamePhase = 'ended';
-        this.gameState.isPaused = true;
-        this.gameState.pauseReason = '游戏结束';
+        // 使用GameStateManager处理游戏结束
+        this.gameStateManager.onGameEnd(winner);
         
-        const winnerText = winner === 'player' ? '玩家胜利！' : '对手胜利！';
-        const message = winner === 'player' 
-            ? '🎉 恭喜！你成功消耗了对手的所有元素！' 
-            : '💀 失败！你的元素已被全部消耗！';
-            
-        this.uiManager.showMessage(`${winnerText} ${message}`, winner === 'player' ? 'success' : 'error');
-        
-        // 3秒后显示重新开始选项
+        // 3秒后监听重新开始
         this.time.delayedCall(3000, () => {
-            this.uiManager.showMessage('按R键重新开始游戏', 'success');
-            
-            // 监听重新开始
             this.input.keyboard!.once('keydown-R', () => {
                 this.restartGame();
             });
@@ -1331,64 +924,34 @@ export class LZoreGameScene extends Phaser.Scene {
      * 重新开始游戏
      */
     private restartGame() {
-        // 重置游戏状态
-        this.gameState = { ...INITIAL_GAME_STATE };
-        this.gameState.gamePhase = 'realtime';
-        
-        // 清理场景
-        this.placedCards.forEach(card => card.destroy());
-        this.placedCards = [];
-        this.discardPile = [];
-        this.opponentDiscardPile = [];
-        
-        // 重新发牌
-        this.playerHand.clear(true);
-        this.opponentHand.clear(true);
-        this.dealInitialCards();
-        
-        // 重启实时系统
-        this.realtimeManager.startRealtimeSystem();
-        
-        this.uiManager.showMessage('🔄 游戏重新开始！', 'success');
+        // 使用GameStateManager处理游戏重启
+        this.gameStateManager.restartGame({
+            clearPlacedCards: () => {
+                this.placedCards.forEach(card => card.destroy());
+                this.placedCards = [];
+            },
+            clearDiscardPiles: () => {
+                this.discardPile = [];
+                this.opponentDiscardPile = [];
+                this.neutralizationManager.clearDiscardPile();
+            },
+            clearHandCards: () => {
+                this.playerHand.clear(true);
+                this.opponentHand.clear(true);
+            },
+            dealInitialCards: () => this.cardManager.dealInitialCards(),
+            startRealtimeSystem: () => this.realtimeManager.startRealtimeSystem()
+        });
     }
 
     /**
      * 检查元素中和机制
      */
     private checkElementNeutralization() {
-        // 这里实现复杂的元素中和逻辑
-        // 暂时简化为随机触发，实际应该基于五行相克规则
-        if (Math.random() < 0.3) { // 30%概率触发中和
-            // 寻找可以中和的卡牌
-            const neutralizableCards = this.placedCards.filter(card => {
-                const cardData = card.getData('cardData');
-                return cardData && !card.getData('neutralized');
-            });
-            
-            if (neutralizableCards.length > 0) {
-                const targetCard = neutralizableCards[Math.floor(Math.random() * neutralizableCards.length)];
-                const cardData = targetCard.getData('cardData');
-                
-                // 标记为已中和
-                targetCard.setData('neutralized', true);
-                
-                // 视觉效果：卡牌变灰
-                targetCard.setAlpha(0.5);
-                // 对容器中的所有子对象进行着色
-                targetCard.list.forEach((child: any) => {
-                    if (child.setTint) {
-                        child.setTint(0x666666);
-                    }
-                });
-                
-                this.uiManager.showMessage(`⚖️ 元素中和！${cardData.name} 被中和，即将进入弃牌堆！`, 'warning');
-                
-                // 延迟后移入弃牌堆
-                this.time.delayedCall(2000, () => {
-                    this.moveToDiscardPile(targetCard);
-                });
-            }
-        }
+        // 使用NeutralizationManager处理元素中和
+        this.neutralizationManager.checkElementNeutralization(this.placedCards, {
+            moveToDiscardPile: (card) => this.moveToDiscardPile(card)
+        });
     }
 
     /**
@@ -1435,7 +998,22 @@ export class LZoreGameScene extends Phaser.Scene {
      * 关闭效果面板 - 使用phaser-react-ui事件系统
      */
     private closeEffectPanel() {
+        console.log('🔄 Phaser: 开始关闭效果面板');
+        
+        // 防止重复关闭
+        if (!this.isEffectPanelOpen) {
+            console.log('🔄 Phaser: 面板已经关闭，跳过');
+            return;
+        }
+        
         this.isEffectPanelOpen = false;
+        
+        // 取消超时计时器
+        if (this.effectPanelTimeoutId) {
+            this.effectPanelTimeoutId.destroy();
+            this.effectPanelTimeoutId = null;
+            console.log('⏰ 取消效果面板超时计时器');
+        }
         
         // ▶️ 恢复游戏时间
         this.gameState.isPaused = false;
@@ -1443,8 +1021,119 @@ export class LZoreGameScene extends Phaser.Scene {
         
         this.uiManager.showMessage('▶️ 时空恢复！游戏继续...', 'success');
         
-        // 通知React UI关闭面板
+        // 只通知React UI关闭面板，不要再次调用自己
+        console.log('🔄 Phaser: 发送effectPanelClose事件到React');
         this.events.emit('effectPanelClose');
+        
+        console.log('🔄 Phaser: 效果面板关闭完成');
+    }
+
+    /**
+     * 开始伤害结算流程 - 快速版本
+     */
+    private startDamageSettlement(cardData: LZoreCard, actionType: 'damage' | 'buff', targetCount: number, totalValue: number) {
+        console.log(`🎯 开始${actionType === 'damage' ? '伤害' : '增益'}结算流程`);
+        
+        // 显示结算开始消息
+        this.uiManager.showMessage(`⚖️ ${actionType === 'damage' ? '伤害' : '增益'}结算完成！`, 'warning');
+        
+        // 立即开始结算特效（不延迟）
+        this.playSettlementEffects(cardData, actionType, targetCount, totalValue);
+        
+        // 短暂延迟后检查游戏胜负
+        this.time.delayedCall(200, () => {
+            if (!this.checkGameEndConditions()) {
+                // 如果游戏没有结束，快速进入下一阶段
+                this.proceedToNextPhase(cardData);
+            }
+        });
+    }
+
+    /**
+     * 播放结算特效 - 快速版本
+     */
+    private playSettlementEffects(cardData: LZoreCard, actionType: 'damage' | 'buff', targetCount: number, totalValue: number) {
+        // 简化的结算特效，只显示消息
+        const effectText = `${actionType === 'damage' ? '⚔️' : '✨'} ${totalValue}炁克 → ${targetCount}个目标`;
+        this.uiManager.showMessage(effectText, actionType === 'damage' ? 'error' : 'success');
+        
+        // 可选：简单的屏幕闪烁效果
+        const flash = this.add.rectangle(
+            this.cameras.main.centerX, 
+            this.cameras.main.centerY, 
+            this.cameras.main.width, 
+            this.cameras.main.height, 
+            actionType === 'damage' ? 0xff4444 : 0x44ff44, 
+            0.3
+        );
+        flash.setDepth(999);
+        
+        // 快速闪烁动画
+        this.tweens.add({
+            targets: flash,
+            alpha: 0,
+            duration: 200,
+            ease: 'Power2',
+            onComplete: () => {
+                flash.destroy();
+            }
+        });
+        
+        console.log(`🎬 快速结算特效：${effectText}`);
+    }
+
+    /**
+     * 检查游戏结束条件
+     */
+    private checkGameEndConditions() {
+        return this.gameStateManager.checkGameEndConditions();
+    }
+
+    /**
+     * 进入下一阶段
+     */
+    private proceedToNextPhase(cardData: LZoreCard) {
+        // 如果游戏已结束，不继续
+        if (this.gameState.gamePhase === 'ended') {
+            return;
+        }
+        
+        this.uiManager.showMessage(`🔄 ${cardData.name} 效果结算完毕，游戏继续`, 'success');
+        
+        // 移除使用过的卡牌（如果需要）
+        this.removeUsedCard(cardData);
+        
+        // 触发对手回合（如果是对战模式）
+        this.triggerOpponentTurn();
+        
+        // 更新游戏状态
+        this.updateGameStateUI();
+    }
+
+    /**
+     * 移除使用过的卡牌
+     */
+    private removeUsedCard(cardData: LZoreCard) {
+        // 使用CardManager处理卡牌移除
+        this.cardManager.removeUsedCard(cardData);
+    }
+
+    /**
+     * 触发对手回合
+     */
+    private triggerOpponentTurn() {
+        // 如果是即时战斗系统，不需要切换回合
+        if (this.gameState.gamePhase === 'realtime') {
+            // 给对手一个反应的机会
+            this.time.delayedCall(2000, () => {
+                if (Math.random() < 0.4) { // 40%概率对手立即反击
+                    this.executeOpponentAttack();
+                }
+            });
+        }
+        
+        // 释放优先权
+        this.realtimeManager.releasePriority();
     }
 
     /**
@@ -1521,5 +1210,91 @@ export class LZoreGameScene extends Phaser.Scene {
     private getPillarName(position: number): string {
         const names = ['年柱', '月柱', '日柱', '时柱'];
         return names[position % 4];
+    }
+    
+    /**
+     * 每轮生成生命元素（由RealtimeSystemManager的每轮回调触发）
+     */
+    private generateLifeElementsPerTurn(): void {
+        if (!this.lifeElementManager) {
+            return;
+        }
+        
+        // 为场上所有卡牌生成生命元素
+        this.lifeElementManager.generateLifeElementsPerTurn(this.placedCards);
+        
+        // 更新UI状态
+        this.updateGameStateUI();
+    }
+    
+    /**
+     * 处理效果面板15秒超时
+     */
+    private handleEffectPanelTimeout(cardData: LZoreCard, actionType: 'damage' | 'buff', targets: any[]): void {
+        if (!this.isEffectPanelOpen) {
+            console.log('⏰ 面板已关闭，取消超时处理');
+            return;
+        }
+        
+        console.log('⏰ 效果面板15秒超时，执行自动结算');
+        
+        this.uiManager.showMessage('⏰ 超时！按照当前分配自动执行效果', 'warning');
+        
+        // 发送事件请求当前的分配状态
+        this.events.emit('requestCurrentAllocations', {
+            cardData: cardData,
+            actionType: actionType,
+            targets: targets
+        });
+        
+        // 设置一个短暂的延迟来等待React UI响应
+        // 如果React UI没有在100ms内响应，就使用默认分配策略
+        let hasReceivedResponse = false;
+        
+        // 临时监听React UI的响应
+        const responseHandler = () => {
+            hasReceivedResponse = true;
+        };
+        
+        this.events.once('currentAllocationsResponse', responseHandler);
+        
+        this.time.delayedCall(100, () => {
+            if (!hasReceivedResponse) {
+                console.log('⏰ 未收到React UI响应，使用默认分配策略');
+                // 移除监听器
+                this.events.off('currentAllocationsResponse', responseHandler);
+                // 执行默认分配
+                this.executeDefaultAllocation(cardData, actionType, targets);
+            }
+        });
+    }
+    
+    /**
+     * 执行默认分配策略（超时时的备用方案）
+     */
+    private executeDefaultAllocation(cardData: LZoreCard, actionType: 'damage' | 'buff', targets: any[]): void {
+        if (targets.length === 0) {
+            console.log('⚠️ 没有可用目标，关闭面板');
+            this.closeEffectPanel();
+            return;
+        }
+        
+        // 默认分配策略：将所有威力分配给第一个目标
+        const firstTarget = targets[0];
+        const totalPower = cardData.power;
+        
+        const defaultAllocations: Record<string, number> = {
+            [firstTarget.id]: totalPower
+        };
+        
+        console.log('⏰ 使用默认分配策略:', defaultAllocations);
+        
+        // 使用ReactEventManager的多目标执行逻辑
+        this.events.emit('executeMultiTargetEffect', {
+            cardData: cardData,
+            actionType: actionType,
+            allocations: defaultAllocations,
+            targets: targets
+        });
     }
 } 

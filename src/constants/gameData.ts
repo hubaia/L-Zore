@@ -12,7 +12,24 @@ export const CARD_DATABASE: LZoreCard[] = [
         power: 4,
         rarity: '⭐⭐⭐',
         description: '最高吉星，避免厄运，遇事有人帮',
-        effect: '保护己方4枚元素不被中和'
+        effect: '保护己方4枚元素不被中和',
+        // 天乙贵人出现条件：甲戊见牛羊，乙己鼠猴乡
+        // 涉及天干：甲、戊、乙、己 (4个) + 地支：丑、未、子、申 (4个) = 8个天干地支
+        appearConditions: [
+            {
+                type: 'bazi',
+                requirement: '甲戊日见丑未，乙己日见子申',
+                description: '甲戊见牛羊，乙己鼠猴乡'
+            }
+        ],
+        lifeElementGeneration: {
+            baseGeneration: 8,          // 初始生命元素等于天干地支数量
+            elementType: 'metal',
+            generationTrigger: 'placement',
+            maxPerTurn: 3
+        },
+        currentLifeElements: 0,
+        maxLifeElements: 8          // 上限等于天干地支数量
     },
     {
         id: 'wenchang',
@@ -22,7 +39,24 @@ export const CARD_DATABASE: LZoreCard[] = [
         power: 2,
         rarity: '⭐⭐',
         description: '聪明擅艺，主聪明过人，利考试学术',
-        effect: '中和对方2枚元素，智慧加成'
+        effect: '中和对方2枚元素，智慧加成',
+        // 文昌贵人出现条件：甲乙巳午报君知
+        // 涉及天干：甲、乙 (2个) + 地支：巳、午 (2个) = 4个天干地支
+        appearConditions: [
+            {
+                type: 'bazi',
+                requirement: '甲乙日见巳午',
+                description: '甲乙巳午报君知'
+            }
+        ],
+        lifeElementGeneration: {
+            baseGeneration: 4,          // 初始生命元素等于天干地支数量
+            elementType: 'water',
+            generationTrigger: 'turn',
+            maxPerTurn: 2
+        },
+        currentLifeElements: 0,
+        maxLifeElements: 4          // 上限等于天干地支数量
     },
     {
         id: 'yangren',
@@ -32,7 +66,24 @@ export const CARD_DATABASE: LZoreCard[] = [
         power: 3,
         rarity: '⭐⭐⭐',
         description: '刚烈冲动，易惹是非，吉则勇猛',
-        effect: '中和对方3枚元素，可能反噬'
+        effect: '中和对方3枚元素，可能反噬',
+        // 羊刃出现条件：甲羊乙猴丙戊龙
+        // 涉及天干：甲、乙、丙、戊 (4个) + 地支：未、申、辰 (3个) = 7个天干地支
+        appearConditions: [
+            {
+                type: 'bazi',
+                requirement: '甲见未，乙见申，丙戊见辰',
+                description: '甲羊乙猴丙戊龙'
+            }
+        ],
+        lifeElementGeneration: {
+            baseGeneration: 7,          // 初始生命元素等于天干地支数量
+            elementType: 'fire',
+            generationTrigger: 'combat',
+            maxPerTurn: 4
+        },
+        currentLifeElements: 0,
+        maxLifeElements: 7          // 上限等于天干地支数量
     },
     {
         id: 'huagai',
@@ -42,7 +93,24 @@ export const CARD_DATABASE: LZoreCard[] = [
         power: 1,
         rarity: '⭐',
         description: '性情恬淡资质聪颖，易倾向宗教艺术',
-        effect: '隐藏战术意图，属性转换'
+        effect: '隐藏战术意图，属性转换',
+        // 华盖出现条件：寅午戌见戌，亥卯未见未
+        // 涉及地支：寅、午、戌 或 亥、卯、未 (3个) = 3个天干地支
+        appearConditions: [
+            {
+                type: 'combination',
+                requirement: '三合局见库位',
+                description: '寅午戌见戌，亥卯未见未'
+            }
+        ],
+        lifeElementGeneration: {
+            baseGeneration: 3,          // 初始生命元素等于天干地支数量
+            elementType: 'earth',
+            generationTrigger: 'condition',
+            maxPerTurn: 2
+        },
+        currentLifeElements: 0,
+        maxLifeElements: 3          // 上限等于天干地支数量
     },
     {
         id: 'yima',
@@ -52,7 +120,24 @@ export const CARD_DATABASE: LZoreCard[] = [
         power: 2,
         rarity: '⭐⭐',
         description: '主奔波变动异地发展，吉则升迁远行',
-        effect: '增加行动次数，快速移动'
+        effect: '增加行动次数，快速移动',
+        // 驿马出现条件：申子辰马在寅，寅午戌马在申
+        // 涉及地支：申、子、辰、寅 或 寅、午、戌、申 (4个) = 4个天干地支
+        appearConditions: [
+            {
+                type: 'combination',
+                requirement: '三合局对冲',
+                description: '申子辰马在寅，寅午戌马在申'
+            }
+        ],
+        lifeElementGeneration: {
+            baseGeneration: 4,          // 初始生命元素等于天干地支数量
+            elementType: 'fire',
+            generationTrigger: 'turn',
+            maxPerTurn: 3
+        },
+        currentLifeElements: 0,
+        maxLifeElements: 4          // 上限等于天干地支数量
     }
 ];
 

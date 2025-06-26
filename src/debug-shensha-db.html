@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>神煞数据库调试</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            background: #1a1a2e;
+            color: white;
+            padding: 20px;
+            margin: 0;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+        }
+        
+        button {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            margin: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        button:hover {
+            opacity: 0.9;
+        }
+        
+        .log {
+            background: #2a2a3e;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+        
+        .success { color: #4caf50; }
+        .error { color: #f44336; }
+        .warn { color: #ff9800; }
+        .info { color: #2196f3; }
+        
+        .results {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔮 神煞数据库调试工具</h1>
+        
+        <div>
+            <button onclick="clearDatabase()">🗑️ 清空数据库</button>
+            <button onclick="initializeDB()">🔧 初始化数据库</button>
+            <button onclick="checkDatabase()">🔍 检查数据库</button>
+            <button onclick="testQuery()">🎯 测试查询</button>
+            <button onclick="clearLog()">🧹 清空日志</button>
+        </div>
+        
+        <div id="log" class="log"></div>
+        
+        <div id="results" class="results" style="display: none;">
+            <h3>📊 查询结果</h3>
+            <div id="results-content"></div>
+        </div>
+    </div>
+    
+    <script type="module">
+        let db = null;
+        
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = type;
+            logEntry.innerHTML = `[${timestamp}] ${message}`;
+            logDiv.appendChild(logEntry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+        
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+        
+        function showResults(data) {
+            const resultsDiv = document.getElementById('results');
+            const contentDiv = document.getElementById('results-content');
+            
+            if (data && data.length > 0) {
+                resultsDiv.style.display = 'block';
+                contentDiv.innerHTML = data.map(item => 
+                    `<div style="margin: 5px 0; padding: 5px; background: rgba(255,255,255,0.1); border-radius: 3px;">
+                        <strong>${item.name}</strong> - ${item.category} - ${item.element} - 威力:${item.power}
+                    </div>`
+                ).join('');
+            } else {
+                resultsDiv.style.display = 'none';
+            }
+        }
+        
+        window.clearDatabase = async function() {
+            try {
+                log('🗑️ 开始清空数据库...', 'warn');
+                
+                // 关闭现有连接
+                if (db) {
+                    db.close();
+                    db = null;
+                }
+                
+                // 删除数据库
+                const deleteRequest = indexedDB.deleteDatabase('L-Zore-Shensha-DB');
+                
+                deleteRequest.onsuccess = () => {
+                    log('✅ 数据库已清空', 'success');
+                };
+                
+                deleteRequest.onerror = () => {
+                    log('❌ 清空数据库失败: ' + deleteRequest.error, 'error');
+                };
+                
+                deleteRequest.onblocked = () => {
+                    log('⚠️ 数据库清空被阻塞，请关闭其他标签页', 'warn');
+                };
+                
+            } catch (error) {
+                log('❌ 清空数据库出错: ' + error.message, 'error');
+            }
+        };
+        
+        window.initializeDB = async function() {
+            try {
+                log('🔧 开始初始化数据库...', 'info');
+                
+                const request = indexedDB.open('L-Zore-Shensha-DB', 1);
+                
+                request.onerror = () => {
+                    log('❌ 数据库连接失败: ' + request.error, 'error');
+                };
+                
+                request.onsuccess = () => {
+                    db = request.result;
+                    log('✅ 数据库连接成功', 'success');
+                    
+                    // 设置错误处理
+                    db.onerror = (event) => {
+                        log('❌ 数据库错误: ' + event.target.error, 'error');
+                    };
+                };
+                
+                request.onupgradeneeded = (event) => {
+                    log('🔄 数据库升级中...', 'info');
+                    
+                    const database = event.target.result;
+                    const transaction = event.target.transaction;
+                    
+                    let store;
+                    if (!database.objectStoreNames.contains('shensha')) {
+                        log('📝 创建神煞对象存储...', 'info');
+                        store = database.createObjectStore('shensha', { keyPath: 'id' });
+                        store.createIndex('category', 'category', { unique: false });
+                        store.createIndex('rarity', 'rarity', { unique: false });
+                        store.createIndex('element', 'element', { unique: false });
+                        store.createIndex('type', 'type', { unique: false });
+                        store.createIndex('power', 'power', { unique: false });
+                        
+                        log('💾 开始填充测试数据...', 'info');
+                        populateTestData(transaction);
+                    } else {
+                        store = transaction.objectStore('shensha');
+                        const countRequest = store.count();
+                        countRequest.onsuccess = () => {
+                            if (countRequest.result === 0) {
+                                log('💾 数据库为空，填充测试数据...', 'info');
+                                populateTestData(transaction);
+                            } else {
+                                log(`ℹ️ 数据库已包含 ${countRequest.result} 条记录`, 'info');
+                            }
+                        };
+                    }
+                };
+                
+            } catch (error) {
+                log('❌ 初始化失败: ' + error.message, 'error');
+            }
+        };
+        
+        function populateTestData(transaction) {
+            const store = transaction.objectStore('shensha');
+            
+            const testData = [
+                {
+                    id: 'tianyiguiren',
+                    name: '天乙贵人',
+                    category: '吉星吉神',
+                    rarity: '⭐⭐⭐',
+                    element: '金',
+                    power: 4,
+                    type: 'auspicious',
+                    meaning: '最高吉星，避免厄运',
+                    gameEffect: '保护型，可护身免疫'
+                },
+                {
+                    id: 'wenchang',
+                    name: '文昌贵人',
+                    category: '吉星吉神',
+                    rarity: '⭐⭐',
+                    element: '水',
+                    power: 2,
+                    type: 'auspicious',
+                    meaning: '聪明擅艺，主学业功名',
+                    gameEffect: '智慧型，提升学习效率'
+                },
+                {
+                    id: 'yangren',
+                    name: '羊刃',
+                    category: '凶星凶神',
+                    rarity: '⭐⭐⭐',
+                    element: '火',
+                    power: 3,
+                    type: 'inauspicious',
+                    meaning: '刚烈冲动，易惹是非',
+                    gameEffect: '狂暴攻击，高威力但有反噬'
+                }
+            ];
+            
+            let addedCount = 0;
+            testData.forEach(shensha => {
+                const request = store.add(shensha);
+                request.onsuccess = () => {
+                    addedCount++;
+                    log(`✅ 添加神煞: ${shensha.name}`, 'success');
+                    if (addedCount === testData.length) {
+                        log(`🎉 所有测试数据添加完成 (${addedCount}条)`, 'success');
+                    }
+                };
+                request.onerror = () => {
+                    log(`❌ 添加神煞失败: ${shensha.name} - ${request.error}`, 'error');
+                };
+            });
+            
+            transaction.oncomplete = () => {
+                log('✅ 事务完成', 'success');
+            };
+            
+            transaction.onerror = () => {
+                log('❌ 事务失败: ' + transaction.error, 'error');
+            };
+        }
+        
+        window.checkDatabase = async function() {
+            if (!db) {
+                log('❌ 数据库未连接，请先初始化', 'error');
+                return;
+            }
+            
+            try {
+                log('🔍 检查数据库状态...', 'info');
+                
+                const transaction = db.transaction(['shensha'], 'readonly');
+                const store = transaction.objectStore('shensha');
+                const countRequest = store.count();
+                
+                countRequest.onsuccess = () => {
+                    const count = countRequest.result;
+                    log(`📊 数据库包含 ${count} 条神煞记录`, 'info');
+                    
+                    if (count > 0) {
+                        // 获取所有数据
+                        const getAllRequest = store.getAll();
+                        getAllRequest.onsuccess = () => {
+                            const allData = getAllRequest.result;
+                            log(`📋 成功读取所有数据`, 'success');
+                            showResults(allData);
+                            
+                            // 统计分类
+                            const categories = {};
+                            allData.forEach(item => {
+                                categories[item.category] = (categories[item.category] || 0) + 1;
+                            });
+                            
+                            Object.entries(categories).forEach(([category, count]) => {
+                                log(`   - ${category}: ${count}条`, 'info');
+                            });
+                        };
+                    }
+                };
+                
+                countRequest.onerror = () => {
+                    log('❌ 检查数据库失败: ' + countRequest.error, 'error');
+                };
+                
+            } catch (error) {
+                log('❌ 检查数据库出错: ' + error.message, 'error');
+            }
+        };
+        
+        window.testQuery = async function() {
+            if (!db) {
+                log('❌ 数据库未连接，请先初始化', 'error');
+                return;
+            }
+            
+            try {
+                log('🎯 测试查询功能...', 'info');
+                
+                const transaction = db.transaction(['shensha'], 'readonly');
+                const store = transaction.objectStore('shensha');
+                
+                // 测试按分类查询
+                const categoryIndex = store.index('category');
+                const queryRequest = categoryIndex.getAll('吉星吉神');
+                
+                queryRequest.onsuccess = () => {
+                    const results = queryRequest.result;
+                    log(`🔍 查询'吉星吉神'类别，找到 ${results.length} 条记录`, 'success');
+                    showResults(results);
+                };
+                
+                queryRequest.onerror = () => {
+                    log('❌ 查询失败: ' + queryRequest.error, 'error');
+                };
+                
+            } catch (error) {
+                log('❌ 测试查询出错: ' + error.message, 'error');
+            }
+        };
+        
+        // 页面加载时的初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🌟 神煞数据库调试工具已加载', 'success');
+            log('ℹ️ 建议操作顺序：清空数据库 → 初始化数据库 → 检查数据库 → 测试查询', 'info');
+        });
+    </script>
+</body>
+</html> 

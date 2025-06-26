@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>神煞数据库测试</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        h1 {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        
+        .controls {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        
+        .bazi-input {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            color: white;
+        }
+        
+        .bazi-input h3 {
+            margin: 0 0 10px 0;
+            color: #fff;
+        }
+        
+        .pillar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+        
+        .pillar label {
+            width: 50px;
+            color: #ddd;
+            font-size: 14px;
+        }
+        
+        select {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            color: white;
+            padding: 5px 10px;
+            flex: 1;
+        }
+        
+        select option {
+            background: #333;
+            color: white;
+        }
+        
+        button {
+            background: linear-gradient(45deg, #ff6b6b, #feca57);
+            border: none;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+        
+        .results {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 20px;
+        }
+        
+        .shensha-card {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+        }
+        
+        .shensha-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .shensha-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #ffd700;
+            margin-bottom: 10px;
+        }
+        
+        .shensha-info {
+            color: #ddd;
+            margin-bottom: 5px;
+        }
+        
+        .element-icon {
+            font-size: 1.2em;
+            margin-right: 5px;
+        }
+        
+        .stats {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .stats h3 {
+            color: white;
+            margin: 0 0 10px 0;
+        }
+        
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .stat-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: 8px;
+            color: white;
+        }
+        
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4ecdc4;
+        }
+        
+        .loading {
+            text-align: center;
+            color: white;
+            font-size: 18px;
+            padding: 20px;
+        }
+        
+        .error {
+            background: rgba(255, 0, 0, 0.2);
+            border: 1px solid rgba(255, 0, 0, 0.5);
+            color: #ffcccb;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔮 L-Zore神煞数据库测试</h1>
+        
+        <div id="error-message" class="error" style="display: none;"></div>
+        
+        <div class="controls">
+            <div class="bazi-input">
+                <h3>📅 八字配置</h3>
+                <div class="pillar">
+                    <label>年柱:</label>
+                    <select id="year-gan">
+                        <option value="甲">甲</option>
+                        <option value="乙">乙</option>
+                        <option value="丙">丙</option>
+                        <option value="丁">丁</option>
+                        <option value="戊">戊</option>
+                        <option value="己">己</option>
+                        <option value="庚">庚</option>
+                        <option value="辛">辛</option>
+                        <option value="壬">壬</option>
+                        <option value="癸">癸</option>
+                    </select>
+                    <select id="year-zhi">
+                        <option value="子">子</option>
+                        <option value="丑">丑</option>
+                        <option value="寅">寅</option>
+                        <option value="卯">卯</option>
+                        <option value="辰">辰</option>
+                        <option value="巳">巳</option>
+                        <option value="午">午</option>
+                        <option value="未">未</option>
+                        <option value="申">申</option>
+                        <option value="酉">酉</option>
+                        <option value="戌">戌</option>
+                        <option value="亥">亥</option>
+                    </select>
+                </div>
+                
+                <div class="pillar">
+                    <label>月柱:</label>
+                    <select id="month-gan">
+                        <option value="甲">甲</option>
+                        <option value="乙" selected>乙</option>
+                        <option value="丙">丙</option>
+                        <option value="丁">丁</option>
+                        <option value="戊">戊</option>
+                        <option value="己">己</option>
+                        <option value="庚">庚</option>
+                        <option value="辛">辛</option>
+                        <option value="壬">壬</option>
+                        <option value="癸">癸</option>
+                    </select>
+                    <select id="month-zhi">
+                        <option value="子">子</option>
+                        <option value="丑" selected>丑</option>
+                        <option value="寅">寅</option>
+                        <option value="卯">卯</option>
+                        <option value="辰">辰</option>
+                        <option value="巳">巳</option>
+                        <option value="午">午</option>
+                        <option value="未">未</option>
+                        <option value="申">申</option>
+                        <option value="酉">酉</option>
+                        <option value="戌">戌</option>
+                        <option value="亥">亥</option>
+                    </select>
+                </div>
+                
+                <div class="pillar">
+                    <label>日柱:</label>
+                    <select id="day-gan">
+                        <option value="甲">甲</option>
+                        <option value="乙">乙</option>
+                        <option value="丙" selected>丙</option>
+                        <option value="丁">丁</option>
+                        <option value="戊">戊</option>
+                        <option value="己">己</option>
+                        <option value="庚">庚</option>
+                        <option value="辛">辛</option>
+                        <option value="壬">壬</option>
+                        <option value="癸">癸</option>
+                    </select>
+                    <select id="day-zhi">
+                        <option value="子">子</option>
+                        <option value="丑">丑</option>
+                        <option value="寅" selected>寅</option>
+                        <option value="卯">卯</option>
+                        <option value="辰">辰</option>
+                        <option value="巳">巳</option>
+                        <option value="午">午</option>
+                        <option value="未">未</option>
+                        <option value="申">申</option>
+                        <option value="酉">酉</option>
+                        <option value="戌">戌</option>
+                        <option value="亥">亥</option>
+                    </select>
+                </div>
+                
+                <div class="pillar">
+                    <label>时柱:</label>
+                    <select id="hour-gan">
+                        <option value="甲">甲</option>
+                        <option value="乙">乙</option>
+                        <option value="丙">丙</option>
+                        <option value="丁" selected>丁</option>
+                        <option value="戊">戊</option>
+                        <option value="己">己</option>
+                        <option value="庚">庚</option>
+                        <option value="辛">辛</option>
+                        <option value="壬">壬</option>
+                        <option value="癸">癸</option>
+                    </select>
+                    <select id="hour-zhi">
+                        <option value="子">子</option>
+                        <option value="丑">丑</option>
+                        <option value="寅">寅</option>
+                        <option value="卯" selected>卯</option>
+                        <option value="辰">辰</option>
+                        <option value="巳">巳</option>
+                        <option value="午">午</option>
+                        <option value="未">未</option>
+                        <option value="申">申</option>
+                        <option value="酉">酉</option>
+                        <option value="戌">戌</option>
+                        <option value="亥">亥</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div style="display: flex; flex-direction: column; gap: 15px; justify-content: center;">
+                <button onclick="initializeDB()">🔧 初始化数据库</button>
+                <button onclick="findShensha()">🔍 查找神煞</button>
+                <button onclick="getAllShensha()">📚 显示所有神煞</button>
+                <button onclick="getStatistics()">📊 获取统计</button>
+            </div>
+        </div>
+        
+        <div id="stats" class="stats" style="display: none;">
+            <h3>📊 数据库统计</h3>
+            <div id="stats-content" class="stat-grid"></div>
+        </div>
+        
+        <div id="loading" class="loading" style="display: none;">
+            正在处理中...
+        </div>
+        
+        <div id="results" class="results" style="display: none;">
+            <h3 style="color: white; margin-bottom: 20px;">🔮 查询结果</h3>
+            <div id="results-content"></div>
+        </div>
+    </div>
+    
+    <script type="module">
+        // 由于我们在HTML中，我们需要直接实现简化的数据库逻辑
+        // 这里只是一个演示，实际项目中应该使用完整的TypeScript模块
+        
+        let db = null;
+        
+        const TIANGAN = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
+        const DIZHI = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
+        
+        // 简化的神煞数据
+        const SAMPLE_SHENSHA = [
+            {
+                id: 'tianyiguiren',
+                name: '天乙贵人',
+                category: '吉星吉神',
+                rarity: '⭐⭐⭐',
+                element: '金',
+                power: 4,
+                meaning: '最高吉星，避免厄运，遇事有人帮，遇危难有人救',
+                gameEffect: '保护型，可护身免疫'
+            },
+            {
+                id: 'wenchang',
+                name: '文昌贵人',
+                category: '吉星吉神',
+                rarity: '⭐⭐',
+                element: '水',
+                power: 2,
+                meaning: '聪明擅艺，主聪明过人，利考试学术文艺',
+                gameEffect: '智慧型，提升学习效率'
+            },
+            {
+                id: 'yangren',
+                name: '羊刃',
+                category: '凶星凶神',
+                rarity: '⭐⭐⭐',
+                element: '火',
+                power: 3,
+                meaning: '刚烈冲动，易惹是非，吉则勇猛，凶则血光刑伤',
+                gameEffect: '狂暴攻击，高威力但有反噬'
+            },
+            {
+                id: 'huagai',
+                name: '华盖',
+                category: '特殊神煞',
+                rarity: '⭐',
+                element: '土',
+                power: 1,
+                meaning: '性情恬淡资质聪颖，但难免孤独，易倾向哲学宗教艺术',
+                gameEffect: '神秘型，隐藏战术意图'
+            }
+        ];
+        
+        function showError(message) {
+            const errorDiv = document.getElementById('error-message');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 5000);
+        }
+        
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+        }
+        
+        function getElementIcon(element) {
+            const icons = {
+                '金': '💎', '木': '🌲', '水': '💧', '火': '🔥', '土': '🏔️', '特殊': '✨'
+            };
+            return icons[element] || '❓';
+        }
+        
+        function getCategoryIcon(category) {
+            const icons = {
+                '吉星吉神': '🌟', '凶星凶神': '⚡', '特殊神煞': '🔮'
+            };
+            return icons[category] || '📜';
+        }
+        
+        window.initializeDB = async function() {
+            try {
+                showLoading(true);
+                
+                // 模拟数据库初始化
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                db = { initialized: true, data: SAMPLE_SHENSHA };
+                
+                showLoading(false);
+                alert('✅ 数据库初始化成功！');
+                
+                // 自动显示统计
+                getStatistics();
+                
+            } catch (error) {
+                showLoading(false);
+                showError('数据库初始化失败: ' + error.message);
+            }
+        };
+        
+        window.getBazi = function() {
+            return {
+                year: {
+                    gan: document.getElementById('year-gan').value,
+                    zhi: document.getElementById('year-zhi').value
+                },
+                month: {
+                    gan: document.getElementById('month-gan').value,
+                    zhi: document.getElementById('month-zhi').value
+                },
+                day: {
+                    gan: document.getElementById('day-gan').value,
+                    zhi: document.getElementById('day-zhi').value
+                },
+                hour: {
+                    gan: document.getElementById('hour-gan').value,
+                    zhi: document.getElementById('hour-zhi').value
+                }
+            };
+        };
+        
+        window.findShensha = async function() {
+            if (!db || !db.initialized) {
+                showError('请先初始化数据库！');
+                return;
+            }
+            
+            try {
+                showLoading(true);
+                
+                const bazi = getBazi();
+                
+                // 模拟查询延迟
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                // 简化的神煞匹配逻辑（演示用）
+                const matching = db.data.filter(shensha => {
+                    // 这里是简化的查法，实际应该更复杂
+                    if (shensha.id === 'tianyiguiren') {
+                        // 甲日见丑未等
+                        const dayGan = bazi.day.gan;
+                        return (dayGan === '甲' || dayGan === '戊') && 
+                               [bazi.year.zhi, bazi.month.zhi, bazi.day.zhi, bazi.hour.zhi].some(zhi => 
+                                   zhi === '丑' || zhi === '未'
+                               );
+                    }
+                    
+                    if (shensha.id === 'wenchang') {
+                        // 甲乙日见巳午
+                        const dayGan = bazi.day.gan;
+                        return (dayGan === '甲' || dayGan === '乙') && 
+                               [bazi.year.zhi, bazi.month.zhi, bazi.day.zhi, bazi.hour.zhi].some(zhi => 
+                                   zhi === '巳' || zhi === '午'
+                               );
+                    }
+                    
+                    // 其他神煞的简化匹配
+                    return Math.random() > 0.6; // 随机演示
+                });
+                
+                showLoading(false);
+                displayResults(matching, `找到 ${matching.length} 个匹配的神煞`);
+                
+            } catch (error) {
+                showLoading(false);
+                showError('查询失败: ' + error.message);
+            }
+        };
+        
+        window.getAllShensha = async function() {
+            if (!db || !db.initialized) {
+                showError('请先初始化数据库！');
+                return;
+            }
+            
+            try {
+                showLoading(true);
+                await new Promise(resolve => setTimeout(resolve, 300));
+                
+                showLoading(false);
+                displayResults(db.data, `所有神煞 (${db.data.length} 个)`);
+                
+            } catch (error) {
+                showLoading(false);
+                showError('获取数据失败: ' + error.message);
+            }
+        };
+        
+        window.getStatistics = async function() {
+            if (!db || !db.initialized) {
+                showError('请先初始化数据库！');
+                return;
+            }
+            
+            try {
+                const stats = {
+                    total: db.data.length,
+                    byCategory: {},
+                    byRarity: {},
+                    byElement: {}
+                };
+                
+                db.data.forEach(shensha => {
+                    stats.byCategory[shensha.category] = (stats.byCategory[shensha.category] || 0) + 1;
+                    stats.byRarity[shensha.rarity] = (stats.byRarity[shensha.rarity] || 0) + 1;
+                    stats.byElement[shensha.element] = (stats.byElement[shensha.element] || 0) + 1;
+                });
+                
+                displayStatistics(stats);
+                
+            } catch (error) {
+                showError('获取统计失败: ' + error.message);
+            }
+        };
+        
+        function displayResults(shensha, title) {
+            const resultsDiv = document.getElementById('results');
+            const contentDiv = document.getElementById('results-content');
+            
+            resultsDiv.style.display = 'block';
+            
+            const bazi = getBazi();
+            
+            contentDiv.innerHTML = `
+                <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+                    <h4 style="color: white; margin: 0 0 10px 0;">🎯 查询条件</h4>
+                    <div style="color: #ddd; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; text-align: center;">
+                        <div>年柱: ${bazi.year.gan}${bazi.year.zhi}</div>
+                        <div>月柱: ${bazi.month.gan}${bazi.month.zhi}</div>
+                        <div>日柱: ${bazi.day.gan}${bazi.day.zhi}</div>
+                        <div>时柱: ${bazi.hour.gan}${bazi.hour.zhi}</div>
+                    </div>
+                </div>
+                
+                <h4 style="color: #4ecdc4; margin-bottom: 20px;">${title}</h4>
+                
+                ${shensha.map(s => `
+                    <div class="shensha-card">
+                        <div class="shensha-name">
+                            ${getCategoryIcon(s.category)} ${s.name} ${s.rarity}
+                        </div>
+                        <div class="shensha-info">
+                            <span class="element-icon">${getElementIcon(s.element)}</span>
+                            五行: ${s.element} | 威力: ${s.power} | 分类: ${s.category}
+                        </div>
+                        <div class="shensha-info">
+                            <strong>含义:</strong> ${s.meaning}
+                        </div>
+                        <div class="shensha-info">
+                            <strong>游戏效果:</strong> ${s.gameEffect}
+                        </div>
+                    </div>
+                `).join('')}
+                
+                ${shensha.length === 0 ? '<div style="text-align: center; color: #888; padding: 40px;">未找到匹配的神煞</div>' : ''}
+            `;
+        }
+        
+        function displayStatistics(stats) {
+            const statsDiv = document.getElementById('stats');
+            const contentDiv = document.getElementById('stats-content');
+            
+            statsDiv.style.display = 'block';
+            
+            contentDiv.innerHTML = `
+                <div class="stat-item">
+                    <div class="stat-number">${stats.total}</div>
+                    <div>总神煞数</div>
+                </div>
+                
+                ${Object.entries(stats.byCategory).map(([category, count]) => `
+                    <div class="stat-item">
+                        <div class="stat-number">${count}</div>
+                        <div>${getCategoryIcon(category)} ${category}</div>
+                    </div>
+                `).join('')}
+                
+                ${Object.entries(stats.byElement).map(([element, count]) => `
+                    <div class="stat-item">
+                        <div class="stat-number">${count}</div>
+                        <div>${getElementIcon(element)} ${element}系</div>
+                    </div>
+                `).join('')}
+            `;
+        }
+        
+        // 页面加载完成后的初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔮 神煞数据库测试页面已加载');
+            console.log('请点击"初始化数据库"开始测试');
+        });
+    </script>
+</body>
+</html> 
