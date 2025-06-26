@@ -1,9 +1,7 @@
 /**
- * L-Zore神煞数据库 - 重构后的模块化架构
- * 现在使用拆分的数据和检查器模块
+ * L-Zore神煞数据库核心类 - 整合所有拆分模块
  */
 
-// 导入类型定义
 import type { 
     ShenshaRecord, 
     BaziInput, 
@@ -11,20 +9,15 @@ import type {
     ShenshaCategory,
     ShenshaRarity,
     ShenshaElement
-} from './types/ShenshaTypes';
+} from '../types/ShenshaTypes';
 
-// 导入神煞数据
-import { auspiciousShenshaData } from './data/AuspiciousShenshaData';
-import { inauspiciousShenshaData } from './data/InauspiciousShenshaData';
-import { specialShenshaData } from './data/SpecialShenshaData';
+import { auspiciousShenshaData } from '../data/AuspiciousShenshaData';
+import { inauspiciousShenshaData } from '../data/InauspiciousShenshaData';
+import { specialShenshaData } from '../data/SpecialShenshaData';
 
-// 导入检查器
-import { BaseShenshaChecker } from './checkers/BaseShenshaChecker';
-import { InauspiciousShenshaChecker } from './checkers/InauspiciousShenshaChecker';
-import { SpecialShenshaChecker } from './checkers/SpecialShenshaChecker';
-
-// 重新导出类型以保持向后兼容性
-export type { ShenshaRecord, BaziInput, DatabaseStatistics };
+import { BaseShenshaChecker } from '../checkers/BaseShenshaChecker';
+import { InauspiciousShenshaChecker } from '../checkers/InauspiciousShenshaChecker';
+import { SpecialShenshaChecker } from '../checkers/SpecialShenshaChecker';
 
 export class ShenshaDatabase {
     private dbName = 'L-Zore-Shensha-DB';
@@ -32,13 +25,13 @@ export class ShenshaDatabase {
     private db: IDBDatabase | null = null;
 
     /**
-     * 获取完整的50种神煞数据 - 使用拆分模块
+     * 获取完整的50种神煞数据
      */
     private getCompleteShenshaData(): ShenshaRecord[] {
         return [
-            ...auspiciousShenshaData,    // 14种吉星吉神
-            ...inauspiciousShenshaData,  // 15种凶星凶神
-            ...specialShenshaData        // 15种特殊神煞
+            ...auspiciousShenshaData,
+            ...inauspiciousShenshaData,
+            ...specialShenshaData
         ];
     }
 
@@ -81,7 +74,7 @@ export class ShenshaDatabase {
         if (this.db) {
             const isInitialized = await this.isDatabaseInitialized();
             if (isInitialized) {
-                console.log('🗄️ 神煞数据库已初始化');
+                console.log('Database already initialized with data');
                 return;
             }
         }
@@ -96,9 +89,9 @@ export class ShenshaDatabase {
                 // 检查是否需要填充数据（用于版本升级后的情况）
                 const isInitialized = await this.isDatabaseInitialized();
                 if (!isInitialized) {
-                    console.log('🗄️ 数据库已打开但为空，将在升级处理程序中填充数据');
+                    console.log('Database opened but empty, will populate data in upgrade handler');
                 } else {
-                    console.log('🗄️ 数据库已打开且包含数据');
+                    console.log('Database opened and already contains data');
                 }
                 
                 resolve();
@@ -148,17 +141,17 @@ export class ShenshaDatabase {
         shenshaData.forEach(shensha => {
             const request = store.add(shensha);
             request.onerror = () => {
-                console.warn(`⚠️ 添加神煞失败: ${shensha.name}`, request.error);
+                console.warn(`Failed to add shensha: ${shensha.name}`, request.error);
             };
         });
 
         // 添加事务完成的日志
         transaction.oncomplete = () => {
-            console.log(`✅ 成功初始化 ${shenshaData.length} 种神煞记录`);
+            console.log(`Successfully initialized ${shenshaData.length} shensha records`);
         };
 
         transaction.onerror = () => {
-            console.error('❌ 数据填充事务失败:', transaction.error);
+            console.error('Transaction failed during data population:', transaction.error);
         };
     }
 
@@ -350,7 +343,6 @@ export class ShenshaDatabase {
                 return SpecialShenshaChecker.checkLiuyi(bazi.day);
 
             default:
-                console.warn(`⚠️ 未识别的神煞ID: ${shensha.id}`);
                 return false;
         }
     }
@@ -384,10 +376,6 @@ export class ShenshaDatabase {
         if (this.db) {
             this.db.close();
             this.db = null;
-            console.log('🗄️ 神煞数据库连接已关闭');
         }
     }
-}
-
-// 单例模式
-export const shenshaDB = new ShenshaDatabase();
+} 

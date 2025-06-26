@@ -192,6 +192,23 @@ export const LZoreGameUI: React.FC = () => {
             return;
         }
 
+        // 🔥 凶神分配验证：凶神伤害时必须至少分配1点给己方
+        if (effectPanel.cardData?.type === 'inauspicious' && effectPanel.actionType === 'damage') {
+            // 计算分配给己方目标的总数值
+            const playerAllocations = Object.entries(effectPanel.targetAllocations).reduce((total, [targetId, value]) => {
+                const target = effectPanel.targets.find(t => t.id === targetId);
+                return target?.owner === 'player' ? total + value : total;
+            }, 0);
+            
+            if (playerAllocations === 0) {
+                // 显示错误提示
+                alert('⚠️ 凶神规则：使用凶神分配伤害时，至少需要分配1炁克给己方目标！');
+                return;
+            }
+            
+            console.log(`💀 凶神验证通过：已分配${playerAllocations}炁克给己方目标`);
+        }
+
         console.log('🎯 React UI: 发送多目标执行事件到Phaser');
 
         // 发送多目标执行效果事件到Phaser
@@ -470,6 +487,44 @@ export const LZoreGameUI: React.FC = () => {
                                         <span>{Math.round((effectPanel.totalAllocated / effectPanel.currentValue) * 100)}%</span>
                                     </div>
                                 </div>
+
+                                {/* 🔥 凶神规则警告 */}
+                                {effectPanel.cardData?.type === 'inauspicious' && effectPanel.actionType === 'damage' && (
+                                    <div className="mt-6 bg-gradient-to-r from-red-900/50 via-orange-900/50 to-red-900/50 border-2 border-red-500/60 rounded-xl p-4">
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <span className="text-2xl animate-pulse">💀</span>
+                                            <h4 className="text-red-300 font-bold text-sm">凶神规则</h4>
+                                        </div>
+                                        <div className="text-red-200 text-xs leading-relaxed">
+                                            使用凶神分配伤害时，<span className="text-yellow-300 font-bold">至少需要分配1炁克给己方目标</span>，
+                                            体现凶神会对使用者造成负面影响的传统命理概念。
+                                        </div>
+                                        
+                                        {/* 实时验证状态 */}
+                                        {(() => {
+                                            const playerAllocations = Object.entries(effectPanel.targetAllocations).reduce((total, [targetId, value]) => {
+                                                const target = effectPanel.targets.find(t => t.id === targetId);
+                                                return target?.owner === 'player' ? total + value : total;
+                                            }, 0);
+                                            
+                                            return (
+                                                <div className="mt-3 flex items-center gap-2">
+                                                    {playerAllocations > 0 ? (
+                                                        <div className="flex items-center gap-2 text-green-300">
+                                                            <span className="text-lg">✅</span>
+                                                            <span className="text-xs">已分配{playerAllocations}炁克给己方，满足凶神规则</span>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex items-center gap-2 text-red-300">
+                                                            <span className="text-lg animate-bounce">⚠️</span>
+                                                            <span className="text-xs">未满足凶神规则：需要至少分配1炁克给己方目标</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })()}
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -669,16 +724,46 @@ export const LZoreGameUI: React.FC = () => {
                             <button 
                                 className={`
                                     group relative px-8 py-4 rounded-xl font-black text-lg transition-all duration-300 transform
-                                    ${Object.keys(effectPanel.targetAllocations).length > 0 && !effectPanel.isExecuting
-                                        ? `${effectPanel.actionType === 'damage' 
-                                            ? 'bg-gradient-to-r from-red-500 via-pink-500 to-red-600 hover:from-red-600 hover:via-pink-600 hover:to-red-700 text-white shadow-[0_0_30px_rgba(239,68,68,0.6)] hover:shadow-[0_0_50px_rgba(239,68,68,0.8)] hover:scale-110 active:scale-95' 
-                                            : 'bg-gradient-to-r from-green-500 via-emerald-500 to-green-600 hover:from-green-600 hover:via-emerald-600 hover:to-green-700 text-white shadow-[0_0_30px_rgba(34,197,94,0.6)] hover:shadow-[0_0_50px_rgba(34,197,94,0.8)] hover:scale-110 active:scale-95'
-                                        } border-2 ${effectPanel.actionType === 'damage' ? 'border-red-400/60' : 'border-green-400/60'} hover:border-opacity-100` 
-                                        : 'bg-gradient-to-r from-gray-600 to-gray-700 text-gray-400 cursor-not-allowed border-2 border-gray-500/50'
-                                    }
+                                    ${(() => {
+                                        const hasAllocations = Object.keys(effectPanel.targetAllocations).length > 0;
+                                        
+                                        // 凶神规则验证
+                                        let meetsInauspiciousRule = true;
+                                        if (effectPanel.cardData?.type === 'inauspicious' && effectPanel.actionType === 'damage') {
+                                            const playerAllocations = Object.entries(effectPanel.targetAllocations).reduce((total, [targetId, value]) => {
+                                                const target = effectPanel.targets.find(t => t.id === targetId);
+                                                return target?.owner === 'player' ? total + value : total;
+                                            }, 0);
+                                            meetsInauspiciousRule = playerAllocations > 0;
+                                        }
+                                        
+                                        const canExecute = hasAllocations && meetsInauspiciousRule && !effectPanel.isExecuting;
+                                        
+                                        if (canExecute) {
+                                            return effectPanel.actionType === 'damage' 
+                                                ? 'bg-gradient-to-r from-red-500 via-pink-500 to-red-600 hover:from-red-600 hover:via-pink-600 hover:to-red-700 text-white shadow-[0_0_30px_rgba(239,68,68,0.6)] hover:shadow-[0_0_50px_rgba(239,68,68,0.8)] hover:scale-110 active:scale-95 border-2 border-red-400/60 hover:border-opacity-100'
+                                                : 'bg-gradient-to-r from-green-500 via-emerald-500 to-green-600 hover:from-green-600 hover:via-emerald-600 hover:to-green-700 text-white shadow-[0_0_30px_rgba(34,197,94,0.6)] hover:shadow-[0_0_50px_rgba(34,197,94,0.8)] hover:scale-110 active:scale-95 border-2 border-green-400/60 hover:border-opacity-100';
+                                        } else {
+                                            return 'bg-gradient-to-r from-gray-600 to-gray-700 text-gray-400 cursor-not-allowed border-2 border-gray-500/50';
+                                        }
+                                    })()}
                                 `}
                                 onClick={handleMultiTargetExecute}
-                                disabled={Object.keys(effectPanel.targetAllocations).length === 0 || effectPanel.isExecuting}
+                                disabled={(() => {
+                                    const hasAllocations = Object.keys(effectPanel.targetAllocations).length > 0;
+                                    
+                                    // 凶神规则验证
+                                    let meetsInauspiciousRule = true;
+                                    if (effectPanel.cardData?.type === 'inauspicious' && effectPanel.actionType === 'damage') {
+                                        const playerAllocations = Object.entries(effectPanel.targetAllocations).reduce((total, [targetId, value]) => {
+                                            const target = effectPanel.targets.find(t => t.id === targetId);
+                                            return target?.owner === 'player' ? total + value : total;
+                                        }, 0);
+                                        meetsInauspiciousRule = playerAllocations > 0;
+                                    }
+                                    
+                                    return !hasAllocations || !meetsInauspiciousRule || effectPanel.isExecuting;
+                                })()}
                             >
                                 {/* 按钮内部发光效果 */}
                                 {Object.keys(effectPanel.targetAllocations).length > 0 && (
@@ -695,10 +780,25 @@ export const LZoreGameUI: React.FC = () => {
                                         {effectPanel.isExecuting ? '⏳' : (effectPanel.actionType === 'damage' ? '💥' : '✨')}
                                     </span>
                                     <span className="tracking-wide">
-                                        {effectPanel.isExecuting 
-                                            ? '正在执行中...' 
-                                            : (effectPanel.actionType === 'damage' ? '执行多目标攻击' : '执行多目标增益')
-                                        }
+                                        {(() => {
+                                            if (effectPanel.isExecuting) {
+                                                return '正在执行中...';
+                                            }
+                                            
+                                            // 检查凶神规则
+                                            if (effectPanel.cardData?.type === 'inauspicious' && effectPanel.actionType === 'damage') {
+                                                const playerAllocations = Object.entries(effectPanel.targetAllocations).reduce((total, [targetId, value]) => {
+                                                    const target = effectPanel.targets.find(t => t.id === targetId);
+                                                    return target?.owner === 'player' ? total + value : total;
+                                                }, 0);
+                                                
+                                                if (playerAllocations === 0) {
+                                                    return '需要分配给己方';
+                                                }
+                                            }
+                                            
+                                            return effectPanel.actionType === 'damage' ? '执行多目标攻击' : '执行多目标增益';
+                                        })()}
                                     </span>
                                     {!effectPanel.isExecuting && Object.keys(effectPanel.targetAllocations).length > 0 && (
                                         <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>

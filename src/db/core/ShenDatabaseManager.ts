@@ -1,9 +1,7 @@
 /**
- * L-Zore神煞数据库 - 重构后的模块化架构
- * 现在使用拆分的数据和检查器模块
+ * L-Zore神煞数据库管理器 - 拆分重构后的核心类
  */
 
-// 导入类型定义
 import type { 
     ShenshaRecord, 
     BaziInput, 
@@ -11,28 +9,23 @@ import type {
     ShenshaCategory,
     ShenshaRarity,
     ShenshaElement
-} from './types/ShenshaTypes';
+} from '../types/ShenshaTypes';
 
-// 导入神煞数据
-import { auspiciousShenshaData } from './data/AuspiciousShenshaData';
-import { inauspiciousShenshaData } from './data/InauspiciousShenshaData';
-import { specialShenshaData } from './data/SpecialShenshaData';
+import { auspiciousShenshaData } from '../data/AuspiciousShenshaData';
+import { inauspiciousShenshaData } from '../data/InauspiciousShenshaData';
+import { specialShenshaData } from '../data/SpecialShenshaData';
 
-// 导入检查器
-import { BaseShenshaChecker } from './checkers/BaseShenshaChecker';
-import { InauspiciousShenshaChecker } from './checkers/InauspiciousShenshaChecker';
-import { SpecialShenshaChecker } from './checkers/SpecialShenshaChecker';
+import { BaseShenshaChecker } from '../checkers/BaseShenshaChecker';
+import { InauspiciousShenshaChecker } from '../checkers/InauspiciousShenshaChecker';
+import { SpecialShenshaChecker } from '../checkers/SpecialShenshaChecker';
 
-// 重新导出类型以保持向后兼容性
-export type { ShenshaRecord, BaziInput, DatabaseStatistics };
-
-export class ShenshaDatabase {
+export class ShenDatabaseManager {
     private dbName = 'L-Zore-Shensha-DB';
     private version = 2; // 升级版本以支持50种神煞
     private db: IDBDatabase | null = null;
 
     /**
-     * 获取完整的50种神煞数据 - 使用拆分模块
+     * 获取完整的50种神煞数据
      */
     private getCompleteShenshaData(): ShenshaRecord[] {
         return [
@@ -387,7 +380,4 @@ export class ShenshaDatabase {
             console.log('🗄️ 神煞数据库连接已关闭');
         }
     }
-}
-
-// 单例模式
-export const shenshaDB = new ShenshaDatabase();
+} 

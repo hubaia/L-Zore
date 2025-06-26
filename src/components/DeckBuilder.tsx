@@ -4,6 +4,8 @@ import { CARD_DATABASE } from '../constants/gameData';
 import type { BaZi, LZoreCard } from '../types/gameTypes';
 import { shenshaDB } from '../db/ShenshaDatabase';
 import type { ShenshaRecord, BaziInput } from '../db/ShenshaDatabase';
+import { workerManager } from '../managers/WorkerManager';
+import { WorkerPerformancePanel } from './WorkerPerformancePanel';
 
 // 扩展神煞记录类型，添加游戏所需字段
 interface GameShenshaRecord extends ShenshaRecord {
@@ -209,7 +211,7 @@ export const DeckBuilder: React.FC = () => {
     };
 
     /**
-     * 计算神煞生命元素（使用新数据库）
+     * 计算神煞生命元素（混合计算：数据库主查询 + Worker性能验证）
      */
     const calculateLifeElements = async (bazi: BaziInput): Promise<GameShenshaRecord[]> => {
         if (!dbInitialized) {
@@ -217,11 +219,42 @@ export const DeckBuilder: React.FC = () => {
         }
 
         try {
-            // 使用新数据库查询符合条件的神煞
-            const matchingShensha = await shenshaDB.findShenshaForBazi(bazi);
-            
-            // 应用数据碎片增强效果
-            const enhancedShensha: GameShenshaRecord[] = matchingShensha.map(shensha => {
+            console.log('🔄 构筑器: 开始混合计算模式 (数据库主查询 + Worker性能验证)...', {
+                八字: `${bazi.year.gan}${bazi.year.zhi} ${bazi.month.gan}${bazi.month.zhi} ${bazi.day.gan}${bazi.day.zhi} ${bazi.hour.gan}${bazi.hour.zhi}`
+            });
+
+            const startTime = performance.now();
+
+            // 🔄 使用数据库作为主要查询，Worker作为性能验证和补充
+            const [dbShensha, workerShensha] = await Promise.all([
+                shenshaDB.findShenshaForBazi(bazi), // 主要数据库查询（完整神煞）
+                workerManager.matchShensha(bazi).catch(error => {
+                    console.warn('⚠️ Worker计算失败，使用数据库结果:', error);
+                    return []; // Worker失败时返回空数组
+                }) // Web Worker计算（性能验证）
+            ]);
+
+            const endTime = performance.now();
+            console.log(`⚡ 混合计算完成，用时: ${(endTime - startTime).toFixed(2)}ms`);
+            console.log('🔍 数据库结果:', dbShensha.map(s => s.name).join(', '));
+            console.log('🔍 Worker验证:', workerShensha.map(s => s.name).join(', '));
+
+            // 🔍 Worker性能验证：比较结果一致性
+            if (workerShensha.length > 0) {
+                const workerNames = new Set(workerShensha.map(s => s.name));
+                const dbNames = new Set(dbShensha.map(s => s.name));
+                const commonShensha = dbShensha.filter(s => workerNames.has(s.name));
+                
+                console.log(`📊 Worker验证统计:`, {
+                    '数据库神煞': dbShensha.length,
+                    'Worker神煞': workerShensha.length,
+                    '验证一致': commonShensha.length,
+                    '验证率': `${((commonShensha.length / Math.max(dbShensha.length, 1)) * 100).toFixed(1)}%`
+                });
+            }
+
+            // 🎯 优先使用完整的数据库结果，应用数据碎片增强效果
+            const enhancedShensha: GameShenshaRecord[] = dbShensha.map(shensha => {
                 const hasBoost = investedFragments.some(f => 
                     f.type === 'boost' && f.value === shensha.element
                 );
@@ -231,16 +264,47 @@ export const DeckBuilder: React.FC = () => {
                     // 增强效果：力量+1
                     power: hasBoost ? shensha.power + 1 : shensha.power,
                     // 添加游戏所需的生命元素字段
-                    currentLifeElements: shensha.power,
-                    maxLifeElements: shensha.power,
+                    currentLifeElements: hasBoost ? shensha.power + 1 : shensha.power,
+                    maxLifeElements: hasBoost ? shensha.power + 1 : shensha.power,
                     effect: shensha.gameEffect
                 };
             });
 
+            // 显示混合计算性能统计
+            const stats = workerManager.getPerformanceStats();
+            console.log('📊 混合计算性能统计:', {
+                数据库神煞数量: dbShensha.length,
+                Worker验证数量: workerShensha.length,
+                混合计算耗时: `${(endTime - startTime).toFixed(2)}ms`,
+                Worker平均耗时: `${stats.averageExecutionTime.toFixed(2)}ms`,
+                Worker完成任务: stats.completedTasks
+            });
+
             return enhancedShensha;
         } catch (error) {
-            console.error('神煞查询失败:', error);
-            return [];
+            console.error('❌ 混合计算失败，回退到纯数据库模式:', error);
+            
+            // 回退到纯数据库查询
+            try {
+                const matchingShensha = await shenshaDB.findShenshaForBazi(bazi);
+                
+                return matchingShensha.map(shensha => {
+                    const hasBoost = investedFragments.some(f => 
+                        f.type === 'boost' && f.value === shensha.element
+                    );
+                    
+                    return {
+                        ...shensha,
+                        power: hasBoost ? shensha.power + 1 : shensha.power,
+                        currentLifeElements: hasBoost ? shensha.power + 1 : shensha.power,
+                        maxLifeElements: hasBoost ? shensha.power + 1 : shensha.power,
+                        effect: shensha.gameEffect
+                    };
+                });
+            } catch (dbError) {
+                console.error('❌ 数据库查询也失败:', dbError);
+                return [];
+            }
         }
     };
 
@@ -951,6 +1015,9 @@ export const DeckBuilder: React.FC = () => {
                     )}
                 </div>
             </div>
+
+            {/* 🚀 Web Worker性能监控面板 */}
+            <WorkerPerformancePanel />
         </div>
     );
 }; 
