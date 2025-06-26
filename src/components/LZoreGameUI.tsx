@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useCurrentScene, useEvent, useRelativeScale } from 'phaser-react-ui';
+import { CardHistoryPanel } from './CardHistoryPanel';
 
 /**
  * L-Zore游戏UI组件
@@ -72,6 +73,11 @@ export const LZoreGameUI: React.FC = () => {
         currentStreak: 0
     });
 
+    // 历史记录面板状态
+    const [historyPanel, setHistoryPanel] = useState({
+        isOpen: false
+    });
+
     // 监听游戏状态更新
     useEvent(scene.events, 'gameStateUpdate', (newState: any) => {
         setGameState(prev => ({ ...prev, ...newState }));
@@ -140,6 +146,24 @@ export const LZoreGameUI: React.FC = () => {
 
     const handleUseSpecialAbility = () => {
         scene.events.emit('useSpecialAbility');
+    };
+
+    // 历史记录面板处理函数
+    const handleOpenHistory = () => {
+        console.log('🔄 LZoreGameUI: 打开历史记录面板');
+        setHistoryPanel({ isOpen: true });
+    };
+
+    const handleCloseHistory = () => {
+        console.log('🔄 LZoreGameUI: 关闭历史记录面板');
+        setHistoryPanel({ isOpen: false });
+    };
+
+    // 获取历史记录管理器
+    const getHistoryManager = () => {
+        // 通过scene获取历史记录管理器
+        const gameScene = scene as any;
+        return gameScene.cardHistoryManager || null;
     };
 
     // 移除已废弃的单目标处理函数，现在使用多目标分配系统
@@ -283,7 +307,7 @@ export const LZoreGameUI: React.FC = () => {
             
             {/* 左下角 - 玩家本命八字及元素 */}
             <div className="absolute bottom-4 left-4 pointer-events-auto">
-                <div className="bg-blue-900/90 border-2 border-cyan-400 rounded-lg p-4 backdrop-blur-sm">
+                <div className="bg-blue-900/90 border-2 border-cyan-400 rounded-lg p-4 backdrop-blur-sm mb-3">
                     <div className="text-cyan-300 text-xs font-bold mb-2">我方本命</div>
                     <div className="text-cyan-100 text-sm mb-3 tracking-wider">
                         {formatBaZi(gameState.playerBazi)}
@@ -305,6 +329,23 @@ export const LZoreGameUI: React.FC = () => {
                         ></div>
                     </div>
                 </div>
+                
+                {/* 历史记录按钮 */}
+                <button
+                    onClick={handleOpenHistory}
+                    className="group w-full bg-gradient-to-r from-purple-900/90 to-indigo-900/90 border-2 border-purple-400/60 rounded-lg p-3 backdrop-blur-sm hover:border-purple-300/80 transition-all duration-300 hover:scale-105 hover:shadow-[0_0_20px_rgba(147,51,234,0.4)]"
+                >
+                    <div className="flex items-center justify-center gap-2">
+                        <span className="text-2xl group-hover:animate-bounce">📚</span>
+                        <div className="text-center">
+                            <div className="text-purple-300 text-xs font-bold">历史记录</div>
+                            <div className="text-purple-200 text-xs opacity-80">查看卡牌使用</div>
+                        </div>
+                    </div>
+                    
+                    {/* 发光效果 */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-purple-500/0 via-purple-500/10 to-purple-500/0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                </button>
             </div>
 
             {/* 右上角 - 对手本命八字及元素 */}
@@ -849,6 +890,13 @@ export const LZoreGameUI: React.FC = () => {
                     </div>
                 </div>
             )}
+
+            {/* 历史记录面板 */}
+            <CardHistoryPanel 
+                isOpen={historyPanel.isOpen}
+                onClose={handleCloseHistory}
+                historyManager={getHistoryManager()}
+            />
         </div>
     );
 }; 

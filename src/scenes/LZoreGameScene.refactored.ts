@@ -22,6 +22,7 @@ import { AssetManager } from '../managers/AssetManager';
 import { ReactEventManager } from '../managers/ReactEventManager';
 import { UtilityManager } from '../managers/UtilityManager';
 import { LifeElementManager } from '../managers/LifeElementManager';
+import { CardHistoryManager } from '../managers/CardHistoryManager';
 
 /**
  * L-Zore神煞卡牌游戏场景 - 重构版本
@@ -68,6 +69,7 @@ export class LZoreGameScene extends Phaser.Scene {
     private reactEventManager!: ReactEventManager;
     private utilityManager!: UtilityManager;
     private lifeElementManager!: LifeElementManager;
+    private cardHistoryManager!: CardHistoryManager;
     
     // phaser-react-ui 接口
     private ui!: Interface;
@@ -406,6 +408,12 @@ export class LZoreGameScene extends Phaser.Scene {
             (text, type) => this.uiManager.showMessage(text, type)
         );
         
+        // 初始化历史记录管理器
+        this.cardHistoryManager = new CardHistoryManager(
+            this,
+            (text, type) => this.uiManager.showMessage(text, type)
+        );
+        
         // 初始化React事件管理器
         this.reactEventManager = new ReactEventManager(
             this,
@@ -464,6 +472,10 @@ export class LZoreGameScene extends Phaser.Scene {
         
         // 启动实时系统
         this.realtimeManager.startRealtimeSystem();
+        
+        // 开始新的游戏会话记录
+        const deckData = this.gameState ? this.cardDatabase : undefined;
+        this.cardHistoryManager.startGameSession(this.gameState, deckData);
         
         console.log('✅ 管理器系统初始化完成');
     }
@@ -799,6 +811,16 @@ export class LZoreGameScene extends Phaser.Scene {
      * 应用效果
      */
     private applyEffect(cardData: LZoreCard, type: 'damage' | 'buff', targetPosition: number) {
+        // 收集目标信息用于历史记录
+        const targets = [{
+            id: `position_${targetPosition}`,
+            name: this.getPillarName(targetPosition),
+            type: 'pillar' as const,
+            owner: type === 'damage' ? 'opponent' as const : 'player' as const,
+            allocatedValue: cardData.power,
+            position: targetPosition
+        }];
+        
         if (type === 'damage') {
             // 对对手造成伤害 - 减少对手的剩余元素
             const damage = Math.min(cardData.power, this.gameState.opponentRemainingElements);
@@ -812,6 +834,18 @@ export class LZoreGameScene extends Phaser.Scene {
                 console.log(`⚔️ ${cardData.name} 战斗中生成了 ${combatElements} 枚生命元素`);
             }
             
+            // 记录卡牌使用历史（伤害类型）
+            this.cardHistoryManager.recordCardUsage(
+                cardData,
+                'player',
+                'damage',
+                targets,
+                damage,
+                this.gameState,
+                undefined,
+                `对${this.getPillarName(targetPosition)}造成${damage}点伤害`
+            );
+            
             // 检查对手是否败北
             if (this.gameState.opponentRemainingElements <= 0) {
                 this.onGameEnd('player');
@@ -824,6 +858,18 @@ export class LZoreGameScene extends Phaser.Scene {
             this.gameState.playerRemainingElements += heal;
             
             this.uiManager.showMessage(`为${this.getPillarName(targetPosition)}提供${heal}点元素增益！玩家剩余${this.gameState.playerRemainingElements}枚元素`, 'success');
+            
+            // 记录卡牌使用历史（增益类型）
+            this.cardHistoryManager.recordCardUsage(
+                cardData,
+                'player',
+                'buff',
+                targets,
+                heal,
+                this.gameState,
+                undefined,
+                `为${this.getPillarName(targetPosition)}提供${heal}点增益`
+            );
         }
         
         // 卡牌使用效果后保留在格子中，等待元素中和
@@ -842,18 +888,55 @@ export class LZoreGameScene extends Phaser.Scene {
     private applySpecialEffect(effectName: string) {
         this.uiManager.showMessage(`施展特殊效果：${effectName}！`, 'warning');
         
+        // 创建一个临时的卡牌数据用于记录特殊效果
+        const specialCard: LZoreCard = {
+            id: `special_${Date.now()}`,
+            name: effectName,
+            type: 'special' as any,
+            element: 'special',
+            rarity: 'special',
+            power: 0,
+            description: `特殊效果：${effectName}`,
+            effect: `施展特殊效果：${effectName}`,
+            appearConditions: [],
+            lifeElementGeneration: undefined
+        };
+        
+        let totalValue = 0;
+        let targets: any[] = [];
+        
         // 根据特殊效果名称执行不同逻辑
         switch (effectName) {
             case '全体增益':
                 const playerHeal = Math.min(2, 8 - this.gameState.playerRemainingElements);
                 this.gameState.playerRemainingElements += playerHeal;
                 this.uiManager.showMessage(`全体增益：恢复${playerHeal}枚元素！`, 'success');
+                
+                totalValue = playerHeal;
+                targets = [{
+                    id: 'all_player_pillars',
+                    name: '全体己方',
+                    type: 'bazi',
+                    owner: 'player',
+                    allocatedValue: playerHeal
+                }];
+                specialCard.power = playerHeal;
                 break;
                 
             case '全体伤害':
                 const opponentDamage = Math.min(2, this.gameState.opponentRemainingElements);
                 this.gameState.opponentRemainingElements -= opponentDamage;
                 this.uiManager.showMessage(`全体伤害：对手失去${opponentDamage}枚元素！`, 'error');
+                
+                totalValue = opponentDamage;
+                targets = [{
+                    id: 'all_opponent_pillars',
+                    name: '全体对手',
+                    type: 'bazi',
+                    owner: 'opponent',
+                    allocatedValue: opponentDamage
+                }];
+                specialCard.power = opponentDamage;
                 
                 if (this.gameState.opponentRemainingElements <= 0) {
                     this.onGameEnd('player');
@@ -865,8 +948,29 @@ export class LZoreGameScene extends Phaser.Scene {
                 this.uiManager.showMessage('强制触发元素中和！', 'warning');
                 // 强制触发一次元素中和
                 this.forceElementNeutralization();
+                
+                totalValue = 1;
+                targets = [{
+                    id: 'neutralization_effect',
+                    name: '元素中和',
+                    type: 'fieldCard',
+                    owner: 'player',
+                    allocatedValue: 1
+                }];
                 break;
         }
+        
+        // 记录特殊效果使用历史
+        this.cardHistoryManager.recordCardUsage(
+            specialCard,
+            'player',
+            'special',
+            targets,
+            totalValue,
+            this.gameState,
+            effectName,
+            `使用特殊效果：${effectName}，影响${targets.length}个目标`
+        );
         
         // 更新UI显示最新的元素数量
         this.updateGameStateUI();
@@ -912,6 +1016,11 @@ export class LZoreGameScene extends Phaser.Scene {
      * 游戏结束处理
      */
     private onGameEnd(winner: 'player' | 'opponent') {
+        // 结束游戏会话记录
+        this.cardHistoryManager.endGameSession(
+            winner === 'player' ? 'player_win' : 'opponent_win'
+        );
+        
         // 使用GameStateManager处理游戏结束
         this.gameStateManager.onGameEnd(winner);
         

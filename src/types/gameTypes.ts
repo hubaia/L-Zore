@@ -100,4 +100,137 @@ export interface OpponentAction {
 export interface LZorePhaserGameProps {
     onGameStateChange?: (state: GameState) => void;
     onCardPlayed?: (cardData: LZoreCard, position: number) => void;
+}
+
+/**
+ * 卡牌使用记录接口
+ */
+export interface CardUsageRecord {
+    /** 记录唯一ID */
+    id: string;
+    /** 游戏会话ID */
+    sessionId: string;
+    /** 使用的卡牌信息 */
+    card: LZoreCard;
+    /** 使用时间戳 */
+    timestamp: number;
+    /** 使用时间（可读格式） */
+    usageTime: string;
+    /** 使用者（玩家/对手） */
+    user: 'player' | 'opponent';
+    /** 行动类型（伤害/增益） */
+    actionType: 'damage' | 'buff' | 'special';
+    /** 目标列表 */
+    targets: CardUsageTarget[];
+    /** 总分配数值 */
+    totalValue: number;
+    /** 游戏阶段 */
+    gamePhase: 'preparation' | 'battle' | 'realtime' | 'ended';
+    /** 玩家八字（使用时） */
+    playerBazi: any;
+    /** 卡牌生命元素状态 */
+    lifeElementStatus: {
+        current: number;
+        max: number;
+        elementType: string;
+    };
+    /** 使用结果 */
+    result: {
+        success: boolean;
+        playerElementsAfter: number;
+        opponentElementsAfter: number;
+        gameEndTriggered: boolean;
+        winner?: 'player' | 'opponent';
+    };
+    /** 特殊效果名称（如果有） */
+    specialEffect?: string;
+    /** 额外备注 */
+    notes?: string;
+}
+
+/**
+ * 卡牌使用目标接口
+ */
+export interface CardUsageTarget {
+    /** 目标ID */
+    id: string;
+    /** 目标名称 */
+    name: string;
+    /** 目标类型 */
+    type: 'fieldCard' | 'bazi' | 'pillar';
+    /** 目标所有者 */
+    owner: 'player' | 'opponent';
+    /** 分配的数值 */
+    allocatedValue: number;
+    /** 目标位置（如果适用） */
+    position?: number;
+    /** 目标详细数据 */
+    targetData?: any;
+}
+
+/**
+ * 游戏会话接口
+ */
+export interface GameSession {
+    /** 会话ID */
+    id: string;
+    /** 开始时间 */
+    startTime: number;
+    /** 结束时间 */
+    endTime?: number;
+    /** 持续时间（秒） */
+    duration?: number;
+    /** 游戏结果 */
+    result?: 'player_win' | 'opponent_win' | 'ongoing';
+    /** 使用的卡牌总数 */
+    totalCardsUsed: number;
+    /** 玩家使用的卡牌数 */
+    playerCardsUsed: number;
+    /** 对手使用的卡牌数 */
+    opponentCardsUsed: number;
+    /** 玩家初始八字 */
+    playerBazi: any;
+    /** 对手初始八字 */
+    opponentBazi: any;
+    /** 构筑数据（如果来自构筑器） */
+    deckData?: LZoreCard[];
+    /** 会话备注 */
+    notes?: string;
+}
+
+/**
+ * 历史记录统计接口
+ */
+export interface UsageStatistics {
+    /** 总使用次数 */
+    totalUsages: number;
+    /** 总游戏会话数 */
+    totalSessions: number;
+    /** 总胜利数 */
+    totalWins: number;
+    /** 总失败数 */
+    totalLosses: number;
+    /** 胜率 */
+    winRate: number;
+    /** 平均每局使用卡牌数 */
+    avgCardsPerSession: number;
+    /** 最常使用的卡牌 */
+    mostUsedCards: { card: LZoreCard; count: number }[];
+    /** 最高伤害记录 */
+    highestDamage: { value: number; record: CardUsageRecord };
+    /** 最高增益记录 */
+    highestBuff: { value: number; record: CardUsageRecord };
+    /** 按卡牌类型统计 */
+    byCardType: {
+        auspicious: number;
+        inauspicious: number;
+        special: number;
+    };
+    /** 按时间段统计 */
+    byTimePeriod: {
+        today: number;
+        thisWeek: number;
+        thisMonth: number;
+        allTime: number;
+    };
 } 

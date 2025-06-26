@@ -100,7 +100,7 @@ export default function Home() {
                 <h3 className="text-xl font-bold text-white mb-2">🎯 更多游戏</h3>
                 <p className="text-purple-200 text-sm">探索更多精彩的游戏世界</p>
               </div>
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid md:grid-cols-3 gap-4">
                 <Link 
                   to="/game" 
                   className="bg-gradient-to-br from-blue-600/80 to-cyan-600/80 hover:from-blue-700 hover:to-cyan-700 backdrop-blur-sm border border-blue-400/40 text-white font-bold py-6 px-4 rounded-2xl shadow-xl transform hover:scale-105 transition-all duration-300 text-center group relative overflow-hidden"
@@ -132,6 +132,24 @@ export default function Home() {
                       <div className="flex justify-center gap-2">
                         <span className="bg-white/20 px-2 py-1 rounded text-xs">复古</span>
                         <span className="bg-white/20 px-2 py-1 rounded text-xs">趣味</span>
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+                
+                <Link 
+                  to="/test-history" 
+                  className="bg-gradient-to-br from-purple-600/80 to-indigo-600/80 hover:from-purple-700 hover:to-indigo-700 backdrop-blur-sm border border-purple-400/40 text-white font-bold py-6 px-4 rounded-2xl shadow-xl transform hover:scale-105 transition-all duration-300 text-center group relative overflow-hidden"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+                  <div className="relative z-10">
+                    <div className="group-hover:scale-110 transition-transform duration-300">
+                      <span className="text-3xl block mb-3">📚</span>
+                      <div className="text-lg font-bold mb-2">历史记录</div>
+                      <div className="text-purple-100 text-sm mb-3">卡牌使用记录系统</div>
+                      <div className="flex justify-center gap-2">
+                        <span className="bg-white/20 px-2 py-1 rounded text-xs">测试</span>
+                        <span className="bg-white/20 px-2 py-1 rounded text-xs">记录</span>
                       </div>
                     </div>
                   </div>
