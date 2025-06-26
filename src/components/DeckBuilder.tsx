@@ -377,7 +377,7 @@ export const DeckBuilder: React.FC = () => {
     );
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 relative overflow-hidden flex items-center justify-center">
+        <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 relative overflow-hidden">
             {/* 背景装饰元素 */}
             <div className="absolute inset-0 opacity-20">
                 <div className="absolute top-20 left-20 w-40 h-40 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl animate-pulse"></div>
@@ -387,430 +387,533 @@ export const DeckBuilder: React.FC = () => {
                 <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-28 h-28 bg-yellow-400 rounded-full mix-blend-multiply filter blur-xl animate-pulse animation-delay-3000"></div>
             </div>
             
-            <div className="container mx-auto px-4 py-8 relative z-10 max-w-7xl">
-                {/* 标题 */}
-                <div className="text-center mb-8">
-                    <h1 className="text-4xl font-bold text-white mb-4">
-                        🏗️ 神煞构筑中枢
-                    </h1>
-                    <p className="text-purple-200 text-lg">
-                        多源融合 · 资源投入 · 时空同步
-                    </p>
-                    <div className="flex justify-center items-center gap-4 mt-4">
-                        <div className="bg-yellow-600/20 border border-yellow-400/40 rounded-lg px-4 py-2">
-                            <span className="text-yellow-300 font-bold">💰 数据碎片: {playerResources}</span>
-                        </div>
-                        <div className="bg-blue-600/20 border border-blue-400/40 rounded-lg px-4 py-2">
-                            <span className="text-blue-300 font-bold">🕐 {new Date().toLocaleTimeString('zh-CN')}</span>
+            {/* 主容器 - 响应式布局 */}
+            <div className="min-h-screen flex items-center justify-center relative z-10">
+                <div className="w-full flex flex-col lg:flex-row items-center justify-center max-w-7xl mx-auto">
+                    {/* 主要内容区域 */}
+                    <div className="w-full lg:flex-1 max-w-6xl px-4 py-8 overflow-y-auto">
+                    {/* 标题 */}
+                    <div className="text-center mb-8">
+                        <h1 className="text-m font-bold text-white mb-4">
+                            🏗️ 神煞构筑中枢
+                        </h1>
+                        <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mt-4">
+                            <div className="bg-yellow-600/20 border border-yellow-400/40 rounded-lg px-4 py-2">
+                                <span className="text-yellow-300 font-bold">💰 数据碎片: {playerResources}</span>
+                            </div>
+                            <div className="bg-blue-600/20 border border-blue-400/40 rounded-lg px-4 py-2">
+                                <span className="text-blue-300 font-bold">🕐 {new Date().toLocaleTimeString('zh-CN')}</span>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <div className="grid lg:grid-cols-3 gap-6 mb-8">
-                    {/* 主角八字神煞卡 */}
-                    <div className="bg-gradient-to-br from-purple-600/20 to-indigo-600/20 backdrop-blur-sm border border-purple-400/40 rounded-2xl p-6">
-                        <h2 className="text-2xl font-bold text-white mb-4 text-center">
-                            👤 主角神煞
-                        </h2>
-                        <p className="text-purple-200 text-sm mb-4 text-center">
-                            固定角色背景八字
-                        </p>
-                        
-                        {/* 主角八字显示 */}
-                        <div className="bg-purple-600/20 rounded-lg p-4 mb-4">
-                            <div className="grid grid-cols-2 gap-2 text-center">
-                                <div>
-                                    <div className="text-purple-200 text-xs">年柱</div>
-                                    <div className="text-white font-bold">{protagonistBazi.year.gan}{protagonistBazi.year.zhi}</div>
-                                </div>
-                                <div>
-                                    <div className="text-purple-200 text-xs">月柱</div>
-                                    <div className="text-white font-bold">{protagonistBazi.month.gan}{protagonistBazi.month.zhi}</div>
-                                </div>
-                                <div>
-                                    <div className="text-purple-200 text-xs">日柱</div>
-                                    <div className="text-white font-bold">{protagonistBazi.day.gan}{protagonistBazi.day.zhi}</div>
-                                </div>
-                                <div>
-                                    <div className="text-purple-200 text-xs">时柱</div>
-                                    <div className="text-white font-bold">{protagonistBazi.hour.gan}{protagonistBazi.hour.zhi}</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* 主角神煞卡预览 */}
-                        {isBuilt && renderCardList(protagonistDeck, "", "角色专属神煞")}
-                    </div>
-
-                    {/* 构筑器区域 */}
-                    <div className="bg-gradient-to-br from-orange-600/20 to-red-600/20 backdrop-blur-sm border border-orange-400/40 rounded-2xl p-6">
-                        <h2 className="text-2xl font-bold text-white mb-4 text-center">
-                            🔧 神煞构筑器
-                        </h2>
-                        <p className="text-orange-200 text-sm mb-4 text-center">
-                            可配置八字 + 数据碎片投入
-                        </p>
-
-                        {/* 八字配置 */}
-                        <div className="mb-6">
-                            <h3 className="text-lg font-bold text-white mb-3">八字配置</h3>
-                            <div className="grid grid-cols-2 gap-3">
-                                {(['year', 'month', 'day', 'hour'] as const).map((pillar, index) => (
-                                    <div key={pillar} className="text-center">
-                                        <div className="text-orange-200 text-xs mb-1">
-                                            {['年柱', '月柱', '日柱', '时柱'][index]}
-                                        </div>
-                                        <div className="flex gap-1">
-                                            <select
-                                                value={builderBazi[pillar].gan}
-                                                onChange={(e) => updateBuilderBazi(pillar, 'gan', e.target.value)}
-                                                className="flex-1 bg-orange-600/30 border border-orange-400/40 rounded px-2 py-1 text-white text-xs"
-                                            >
-                                                {TIANGAN.map(gan => (
-                                                    <option key={gan} value={gan} className="bg-orange-800">
-                                                        {gan}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                            <select
-                                                value={builderBazi[pillar].zhi}
-                                                onChange={(e) => updateBuilderBazi(pillar, 'zhi', e.target.value)}
-                                                className="flex-1 bg-orange-600/30 border border-orange-400/40 rounded px-2 py-1 text-white text-xs"
-                                            >
-                                                {DIZHI.map(zhi => (
-                                                    <option key={zhi} value={zhi} className="bg-orange-800">
-                                                        {zhi}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* 数据碎片投入 */}
-                        <div className="mb-6">
-                            <h3 className="text-lg font-bold text-white mb-3">数据碎片投入</h3>
-                            
-                            {/* 已投入的碎片 */}
-                            {investedFragments.length > 0 && (
-                                <div className="mb-4">
-                                    <h4 className="text-orange-200 text-sm mb-2">已投入碎片:</h4>
-                                    <div className="space-y-2">
-                                        {investedFragments.map(fragment => (
-                                            <div key={fragment.id} className="flex items-center justify-between bg-orange-600/20 rounded p-2">
-                                                <div>
-                                                    <span className="text-white text-sm font-bold">{fragment.name}</span>
-                                                    <span className="text-orange-200 text-xs ml-2">({fragment.cost}💰)</span>
-                                                </div>
-                                                <button
-                                                    onClick={() => removeFragment(fragment.id)}
-                                                    className="text-red-400 hover:text-red-300 text-xs"
-                                                >
-                                                    ❌
-                                                </button>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* 可用碎片 */}
-                            <div className="space-y-2 max-h-40 overflow-y-auto">
-                                {DATA_FRAGMENTS.map(fragment => {
-                                    const canAfford = playerResources >= fragment.cost;
-                                    const alreadyInvested = investedFragments.some(f => f.id === fragment.id);
-                                    
-                                    return (
-                                        <div 
-                                            key={fragment.id}
-                                            className={`p-2 rounded border text-xs ${getRarityColor(fragment.rarity)} ${
-                                                canAfford && !alreadyInvested 
-                                                    ? 'hover:bg-white/10 cursor-pointer' 
-                                                    : 'opacity-50'
-                                            }`}
-                                            onClick={() => canAfford && !alreadyInvested && investFragment(fragment)}
-                                        >
-                                            <div className="flex justify-between items-center">
-                                                <div>
-                                                    <div className="font-bold">{fragment.name}</div>
-                                                    <div className="text-xs opacity-80">{fragment.description}</div>
-                                                </div>
-                                                <div className="text-yellow-300 font-bold">
-                                                    {fragment.cost}💰
-                                                </div>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
-
-                        {/* 构筑神煞卡预览 */}
-                        {isBuilt && renderCardList(builderDeck, "", "构筑神煞卡")}
-                    </div>
-
-                    {/* 时间神煞卡 */}
-                    <div className="bg-gradient-to-br from-green-600/20 to-cyan-600/20 backdrop-blur-sm border border-green-400/40 rounded-2xl p-6">
-                        <h2 className="text-2xl font-bold text-white mb-4 text-center">
-                            🕐 时间神煞
-                        </h2>
-                        <p className="text-green-200 text-sm mb-4 text-center">
-                            当前时间自动生成八字
-                        </p>
-
-                        {/* 时间八字显示 */}
-                        <div className="bg-green-600/20 rounded-lg p-4 mb-4">
-                            <div className="grid grid-cols-2 gap-2 text-center">
-                                <div>
-                                    <div className="text-green-200 text-xs">年柱</div>
-                                    <div className="text-white font-bold">{timeBazi.year.gan}{timeBazi.year.zhi}</div>
-                                </div>
-                                <div>
-                                    <div className="text-green-200 text-xs">月柱</div>
-                                    <div className="text-white font-bold">{timeBazi.month.gan}{timeBazi.month.zhi}</div>
-                                </div>
-                                <div>
-                                    <div className="text-green-200 text-xs">日柱</div>
-                                    <div className="text-white font-bold">{timeBazi.day.gan}{timeBazi.day.zhi}</div>
-                                </div>
-                                <div>
-                                    <div className="text-green-200 text-xs">时柱</div>
-                                    <div className="text-white font-bold">{timeBazi.hour.gan}{timeBazi.hour.zhi}</div>
-                                </div>
-                            </div>
-                            <div className="text-center mt-2">
-                                <span className="text-green-200 text-xs">
-                                    实时更新 | {new Date().toLocaleString('zh-CN')}
-                                </span>
-                            </div>
-                        </div>
-
-                        {/* 时间神煞卡预览 */}
-                        {isBuilt && renderCardList(timeDeck, "", "时空神煞卡")}
-                    </div>
-                </div>
-
-                {/* 构筑按钮 */}
-                <div className="text-center mb-8">
-                    <button
-                        onClick={handleBuild}
-                        className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold py-4 px-12 rounded-xl shadow-lg transform hover:scale-105 transition-all duration-300 text-lg"
-                    >
-                        🔮 启动多源构筑
-                    </button>
-                </div>
-
-                {/* 主要布局：左侧神煞卡池展示 + 右侧总卡池 */}
-                {isBuilt && (
-                    <div className="mr-88">
-                        {/* 左侧神煞卡池展示 */}
-                        <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-6 mb-8">
-                            <h2 className="text-2xl font-bold text-white mb-6 text-center">
-                                🃏 神煞卡池
+                    {/* 三列配置区域 - 响应式网格 */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                        {/* 主角八字神煞卡 */}
+                        <div className="bg-gradient-to-br from-purple-600/20 to-indigo-600/20 backdrop-blur-sm border border-purple-400/40 rounded-2xl p-6">
+                            <h2 className="text-2xl font-bold text-white mb-4 text-center">
+                                👤 主角神煞
                             </h2>
+                            <p className="text-purple-200 text-sm mb-4 text-center">
+                                固定角色背景八字
+                            </p>
                             
-                            <div className="grid md:grid-cols-3 gap-6 mb-8">
-                                {/* 主角神煞卡池 */}
-                                <div className="bg-gradient-to-br from-purple-600/20 to-indigo-600/20 rounded-xl p-4 h-80 flex flex-col">
-                            <h3 className="text-lg font-bold text-white mb-3 text-center flex items-center justify-center gap-2">
-                                <span className="text-2xl">👤</span>
-                                主角神煞卡池
-                            </h3>
-                            <div className="flex-1 overflow-y-auto">
-                                <div className="space-y-3">
-                                    {protagonistDeck.map(card => (
-                                        <div key={`protagonist-${card.id}`} className="bg-purple-600/30 border border-purple-400/50 rounded-lg p-3 transition-all duration-300">
-                                            <div className="flex items-center justify-between mb-2">
-                                                <h4 className="text-white font-bold text-sm flex items-center gap-2">
-                                                    {card.name}
-                                                    <span className="text-green-400 text-xs">✅</span>
-                                                </h4>
-                                                <span className="text-purple-200 text-xs bg-purple-600/40 px-2 py-1 rounded">
-                                                    {card.rarity}
-                                                </span>
+                            {/* 主角八字显示 */}
+                            <div className="bg-purple-600/20 rounded-lg p-4 mb-4">
+                                <div className="grid grid-cols-2 gap-2 text-center">
+                                    <div>
+                                        <div className="text-purple-200 text-xs">年柱</div>
+                                        <div className="text-white font-bold">{protagonistBazi.year.gan}{protagonistBazi.year.zhi}</div>
+                                    </div>
+                                    <div>
+                                        <div className="text-purple-200 text-xs">月柱</div>
+                                        <div className="text-white font-bold">{protagonistBazi.month.gan}{protagonistBazi.month.zhi}</div>
+                                    </div>
+                                    <div>
+                                        <div className="text-purple-200 text-xs">日柱</div>
+                                        <div className="text-white font-bold">{protagonistBazi.day.gan}{protagonistBazi.day.zhi}</div>
+                                    </div>
+                                    <div>
+                                        <div className="text-purple-200 text-xs">时柱</div>
+                                        <div className="text-white font-bold">{protagonistBazi.hour.gan}{protagonistBazi.hour.zhi}</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* 主角神煞卡预览 */}
+                            {isBuilt && renderCardList(protagonistDeck, "", "角色专属神煞")}
+                        </div>
+
+                        {/* 构筑器区域 */}
+                        <div className="bg-gradient-to-br from-orange-600/20 to-red-600/20 backdrop-blur-sm border border-orange-400/40 rounded-2xl p-6">
+                            <h2 className="text-2xl font-bold text-white mb-4 text-center">
+                                🔧 神煞构筑器
+                            </h2>
+                            <p className="text-orange-200 text-sm mb-4 text-center">
+                                可配置八字 + 数据碎片投入
+                            </p>
+
+                            {/* 八字配置 */}
+                            <div className="mb-6">
+                                <h3 className="text-lg font-bold text-white mb-3">八字配置</h3>
+                                <div className="grid grid-cols-2 gap-3">
+                                    {(['year', 'month', 'day', 'hour'] as const).map((pillar, index) => (
+                                        <div key={pillar} className="text-center">
+                                            <div className="text-orange-200 text-xs mb-1">
+                                                {['年柱', '月柱', '日柱', '时柱'][index]}
                                             </div>
-                                            <div className="flex items-center gap-2 mb-2">
-                                                <span className="text-lg">{getElementIcon(card.element || '')}</span>
-                                                <span className="text-white text-sm">
-                                                    {card.currentLifeElements}/{card.maxLifeElements} {getElementName(card.element || '')}
-                                                </span>
-                                                <span className="text-green-300 text-xs bg-green-600/30 px-1 py-0.5 rounded">
-                                                    已激活
-                                                </span>
-                                            </div>
-                                            <div className="text-purple-200 text-xs bg-purple-600/20 rounded px-2 py-1">
-                                                {card.effect}
+                                            <div className="flex gap-1">
+                                                <select
+                                                    value={builderBazi[pillar].gan}
+                                                    onChange={(e) => updateBuilderBazi(pillar, 'gan', e.target.value)}
+                                                    className="flex-1 bg-orange-600/30 border border-orange-400/40 rounded px-2 py-1 text-white text-xs"
+                                                >
+                                                    {TIANGAN.map(gan => (
+                                                        <option key={gan} value={gan} className="bg-orange-800">
+                                                            {gan}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                                <select
+                                                    value={builderBazi[pillar].zhi}
+                                                    onChange={(e) => updateBuilderBazi(pillar, 'zhi', e.target.value)}
+                                                    className="flex-1 bg-orange-600/30 border border-orange-400/40 rounded px-2 py-1 text-white text-xs"
+                                                >
+                                                    {DIZHI.map(zhi => (
+                                                        <option key={zhi} value={zhi} className="bg-orange-800">
+                                                            {zhi}
+                                                        </option>
+                                                    ))}
+                                                </select>
                                             </div>
                                         </div>
                                     ))}
                                 </div>
+                            </div>
+
+                            {/* 数据碎片投入 */}
+                            <div className="mb-6">
+                                <h3 className="text-lg font-bold text-white mb-3">数据碎片投入</h3>
                                 
-                                {protagonistDeck.length === 0 && (
-                                    <div className="flex items-center justify-center h-full text-purple-300 text-center text-sm">
-                                        <div>
-                                            <div className="text-3xl mb-2">🌙</div>
-                                            <div>当前八字未激活主角神煞</div>
+                                {/* 已投入的碎片 */}
+                                {investedFragments.length > 0 && (
+                                    <div className="mb-4">
+                                        <h4 className="text-orange-200 text-sm mb-2">已投入碎片:</h4>
+                                        <div className="space-y-2">
+                                            {investedFragments.map(fragment => (
+                                                <div key={fragment.id} className="flex items-center justify-between bg-orange-600/20 rounded p-2">
+                                                    <div>
+                                                        <span className="text-white text-sm font-bold">{fragment.name}</span>
+                                                        <span className="text-orange-200 text-xs ml-2">({fragment.cost}💰)</span>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => removeFragment(fragment.id)}
+                                                        className="text-red-400 hover:text-red-300 text-xs"
+                                                    >
+                                                        ❌
+                                                    </button>
+                                                </div>
+                                            ))}
                                         </div>
                                     </div>
                                 )}
-                            </div>
-                        </div>
 
-                                                    {/* 构筑神煞卡池 */}
-                        <div className="bg-gradient-to-br from-orange-600/20 to-red-600/20 rounded-xl p-4 h-80 flex flex-col">
-                            <h3 className="text-lg font-bold text-white mb-3 text-center flex items-center justify-center gap-2">
-                                <span className="text-2xl">🔧</span>
-                                构筑神煞卡池
-                            </h3>
-                            <div className="flex-1 overflow-y-auto">
-                                <div className="space-y-3">
-                                    {builderDeck.map(card => {
-                                        const hasBoost = investedFragments.some(f => f.type === 'boost' && f.value === card.element);
+                                {/* 可用碎片 */}
+                                <div className="space-y-2 max-h-40 overflow-y-auto">
+                                    {DATA_FRAGMENTS.map(fragment => {
+                                        const canAfford = playerResources >= fragment.cost;
+                                        const alreadyInvested = investedFragments.some(f => f.id === fragment.id);
+                                        
                                         return (
-                                            <div key={`builder-${card.id}`} className="bg-orange-600/30 border border-orange-400/50 rounded-lg p-3 transition-all duration-300">
-                                                <div className="flex items-center justify-between mb-2">
-                                                    <h4 className="text-white font-bold text-sm flex items-center gap-2">
-                                                        {card.name}
-                                                        <span className="text-green-400 text-xs">✅</span>
-                                                    </h4>
-                                                    <span className="text-orange-200 text-xs bg-orange-600/40 px-2 py-1 rounded">
-                                                        {card.rarity}
-                                                    </span>
-                                                </div>
-                                                <div className="flex items-center gap-2 mb-2">
-                                                    <span className="text-lg">{getElementIcon(card.element || '')}</span>
-                                                    <span className="text-white text-sm">
-                                                        {card.currentLifeElements}/{card.maxLifeElements} {getElementName(card.element || '')}
-                                                    </span>
-                                                    <span className="text-green-300 text-xs bg-green-600/30 px-1 py-0.5 rounded">
-                                                        已激活
-                                                    </span>
-                                                    {/* 显示增强效果 */}
-                                                    {hasBoost && (
-                                                        <span className="text-yellow-300 text-xs bg-yellow-600/30 px-1 py-0.5 rounded">
-                                                            +1🔥
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                <div className="text-orange-200 text-xs bg-orange-600/20 rounded px-2 py-1">
-                                                    {card.effect}
+                                            <div 
+                                                key={fragment.id}
+                                                className={`p-2 rounded border text-xs ${getRarityColor(fragment.rarity)} ${
+                                                    canAfford && !alreadyInvested 
+                                                        ? 'hover:bg-white/10 cursor-pointer' 
+                                                        : 'opacity-50'
+                                                }`}
+                                                onClick={() => canAfford && !alreadyInvested && investFragment(fragment)}
+                                            >
+                                                <div className="flex justify-between items-center">
+                                                    <div>
+                                                        <div className="font-bold">{fragment.name}</div>
+                                                        <div className="text-xs opacity-80">{fragment.description}</div>
+                                                    </div>
+                                                    <div className="text-yellow-300 font-bold">
+                                                        {fragment.cost}💰
+                                                    </div>
                                                 </div>
                                             </div>
                                         );
                                     })}
                                 </div>
-                                
-                                {builderDeck.length === 0 && (
-                                    <div className="flex items-center justify-center h-full text-orange-300 text-center text-sm">
-                                        <div>
-                                            <div className="text-3xl mb-2">⚙️</div>
-                                            <div>当前配置未激活构筑神煞</div>
-                                        </div>
-                                    </div>
-                                )}
                             </div>
+
+                            {/* 构筑神煞卡预览 */}
+                            {isBuilt && renderCardList(builderDeck, "", "构筑神煞卡")}
                         </div>
 
-                                                    {/* 时间神煞卡池 */}
-                        <div className="bg-gradient-to-br from-green-600/20 to-cyan-600/20 rounded-xl p-4 h-80 flex flex-col">
-                            <h3 className="text-lg font-bold text-white mb-3 text-center flex items-center justify-center gap-2">
-                                <span className="text-2xl">🕐</span>
-                                时间神煞卡池
-                            </h3>
-                            <div className="flex-1 overflow-y-auto">
-                                <div className="space-y-3">
-                                    {timeDeck.map(card => (
-                                        <div key={`time-${card.id}`} className="bg-green-600/30 border border-green-400/50 rounded-lg p-3 transition-all duration-300">
-                                            <div className="flex items-center justify-between mb-2">
-                                                <h4 className="text-white font-bold text-sm flex items-center gap-2">
-                                                    {card.name}
-                                                    <span className="text-green-400 text-xs">✅</span>
-                                                </h4>
-                                                <span className="text-green-200 text-xs bg-green-600/40 px-2 py-1 rounded">
-                                                    {card.rarity}
-                                                </span>
-                                            </div>
-                                            <div className="flex items-center gap-2 mb-2">
-                                                <span className="text-lg">{getElementIcon(card.element || '')}</span>
-                                                <span className="text-white text-sm">
-                                                    {card.currentLifeElements}/{card.maxLifeElements} {getElementName(card.element || '')}
-                                                </span>
-                                                <span className="text-green-300 text-xs bg-green-600/30 px-1 py-0.5 rounded">
-                                                    已激活
-                                                </span>
-                                                <span className="text-green-200 text-xs bg-green-600/30 px-1 py-0.5 rounded">
-                                                    ⏰天时
-                                                </span>
-                                            </div>
-                                            <div className="text-green-200 text-xs bg-green-600/20 rounded px-2 py-1">
-                                                {card.effect}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                                
-                                {timeDeck.length === 0 && (
-                                    <div className="flex items-center justify-center h-full text-green-300 text-center text-sm">
-                                        <div>
-                                            <div className="text-3xl mb-2">⏰</div>
-                                            <div>当前时间未激活时间神煞</div>
-                                        </div>
+                        {/* 时间神煞卡 */}
+                        <div className="bg-gradient-to-br from-green-600/20 to-cyan-600/20 backdrop-blur-sm border border-green-400/40 rounded-2xl p-6">
+                            <h2 className="text-2xl font-bold text-white mb-4 text-center">
+                                🕐 时间神煞
+                            </h2>
+                            <p className="text-green-200 text-sm mb-4 text-center">
+                                当前时间自动生成八字
+                            </p>
+
+                            {/* 时间八字显示 */}
+                            <div className="bg-green-600/20 rounded-lg p-4 mb-4">
+                                <div className="grid grid-cols-2 gap-2 text-center">
+                                    <div>
+                                        <div className="text-green-200 text-xs">年柱</div>
+                                        <div className="text-white font-bold">{timeBazi.year.gan}{timeBazi.year.zhi}</div>
                                     </div>
-                                )}
+                                    <div>
+                                        <div className="text-green-200 text-xs">月柱</div>
+                                        <div className="text-white font-bold">{timeBazi.month.gan}{timeBazi.month.zhi}</div>
+                                    </div>
+                                    <div>
+                                        <div className="text-green-200 text-xs">日柱</div>
+                                        <div className="text-white font-bold">{timeBazi.day.gan}{timeBazi.day.zhi}</div>
+                                    </div>
+                                    <div>
+                                        <div className="text-green-200 text-xs">时柱</div>
+                                        <div className="text-white font-bold">{timeBazi.hour.gan}{timeBazi.hour.zhi}</div>
+                                    </div>
+                                </div>
+                                <div className="text-center mt-2">
+                                    <span className="text-green-200 text-xs">
+                                        实时更新 | {new Date().toLocaleString('zh-CN')}
+                                    </span>
+                                </div>
                             </div>
+
+                            {/* 时间神煞卡预览 */}
+                            {isBuilt && renderCardList(timeDeck, "", "时空神煞卡")}
                         </div>
+                    </div>
+
+                    {/* 构筑按钮 */}
+                    <div className="text-center mb-8">
+                        <button
+                            onClick={handleBuild}
+                            disabled={!dbInitialized}
+                            className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:from-gray-600 disabled:to-gray-700 disabled:cursor-not-allowed text-white font-bold py-4 px-8 lg:px-12 rounded-xl shadow-lg transform hover:scale-105 disabled:hover:scale-100 transition-all duration-300 text-lg"
+                        >
+                            {dbInitialized ? '🔮 启动多源构筑' : '⏳ 数据库初始化中...'}
+                        </button>
+                    </div>
+
+                    {/* 神煞卡池展示区域 */}
+                    {isBuilt && (
+                        <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-4 lg:p-6 mb-8">
+                            <h2 className="text-xl lg:text-2xl font-bold text-white mb-6 text-center">
+                                🃏 神煞卡池详情
+                            </h2>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6 mb-8">
+                                {/* 主角神煞卡池 */}
+                                <div className="bg-gradient-to-br from-purple-600/20 to-indigo-600/20 rounded-xl p-4 h-80 flex flex-col">
+                                    <h3 className="text-lg font-bold text-white mb-3 text-center flex items-center justify-center gap-2">
+                                        <span className="text-2xl">👤</span>
+                                        主角神煞卡池
+                                    </h3>
+                                    <div className="flex-1 overflow-y-auto">
+                                        <div className="space-y-3">
+                                            {protagonistDeck.map(card => (
+                                                <div key={`protagonist-${card.id}`} className="bg-purple-600/30 border border-purple-400/50 rounded-lg p-3 transition-all duration-300">
+                                                    <div className="flex items-center justify-between mb-2">
+                                                        <h4 className="text-white font-bold text-sm flex items-center gap-2">
+                                                            {card.name}
+                                                            <span className="text-green-400 text-xs">✅</span>
+                                                        </h4>
+                                                        <span className="text-purple-200 text-xs bg-purple-600/40 px-2 py-1 rounded">
+                                                            {card.rarity}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                        <span className="text-lg">{getElementIcon(card.element || '')}</span>
+                                                        <span className="text-white text-sm">
+                                                            {card.currentLifeElements}/{card.maxLifeElements} {getElementName(card.element || '')}
+                                                        </span>
+                                                        <span className="text-green-300 text-xs bg-green-600/30 px-1 py-0.5 rounded">
+                                                            已激活
+                                                        </span>
+                                                    </div>
+                                                    <div className="text-purple-200 text-xs bg-purple-600/20 rounded px-2 py-1">
+                                                        {card.effect}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        
+                                        {protagonistDeck.length === 0 && (
+                                            <div className="flex items-center justify-center h-full text-purple-300 text-center text-sm">
+                                                <div>
+                                                    <div className="text-3xl mb-2">🌙</div>
+                                                    <div>当前八字未激活主角神煞</div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* 构筑神煞卡池 */}
+                                <div className="bg-gradient-to-br from-orange-600/20 to-red-600/20 rounded-xl p-4 h-80 flex flex-col">
+                                    <h3 className="text-lg font-bold text-white mb-3 text-center flex items-center justify-center gap-2">
+                                        <span className="text-2xl">🔧</span>
+                                        构筑神煞卡池
+                                    </h3>
+                                    <div className="flex-1 overflow-y-auto">
+                                        <div className="space-y-3">
+                                            {builderDeck.map(card => {
+                                                const hasBoost = investedFragments.some(f => f.type === 'boost' && f.value === card.element);
+                                                return (
+                                                    <div key={`builder-${card.id}`} className="bg-orange-600/30 border border-orange-400/50 rounded-lg p-3 transition-all duration-300">
+                                                        <div className="flex items-center justify-between mb-2">
+                                                            <h4 className="text-white font-bold text-sm flex items-center gap-2">
+                                                                {card.name}
+                                                                <span className="text-green-400 text-xs">✅</span>
+                                                            </h4>
+                                                            <span className="text-orange-200 text-xs bg-orange-600/40 px-2 py-1 rounded">
+                                                                {card.rarity}
+                                                            </span>
+                                                        </div>
+                                                        <div className="flex items-center gap-2 mb-2">
+                                                            <span className="text-lg">{getElementIcon(card.element || '')}</span>
+                                                            <span className="text-white text-sm">
+                                                                {card.currentLifeElements}/{card.maxLifeElements} {getElementName(card.element || '')}
+                                                            </span>
+                                                            <span className="text-green-300 text-xs bg-green-600/30 px-1 py-0.5 rounded">
+                                                                已激活
+                                                            </span>
+                                                            {/* 显示增强效果 */}
+                                                            {hasBoost && (
+                                                                <span className="text-yellow-300 text-xs bg-yellow-600/30 px-1 py-0.5 rounded">
+                                                                    +1🔥
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <div className="text-orange-200 text-xs bg-orange-600/20 rounded px-2 py-1">
+                                                            {card.effect}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                        
+                                        {builderDeck.length === 0 && (
+                                            <div className="flex items-center justify-center h-full text-orange-300 text-center text-sm">
+                                                <div>
+                                                    <div className="text-3xl mb-2">⚙️</div>
+                                                    <div>当前配置未激活构筑神煞</div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* 时间神煞卡池 */}
+                                <div className="bg-gradient-to-br from-green-600/20 to-cyan-600/20 rounded-xl p-4 h-80 flex flex-col">
+                                    <h3 className="text-lg font-bold text-white mb-3 text-center flex items-center justify-center gap-2">
+                                        <span className="text-2xl">🕐</span>
+                                        时间神煞卡池
+                                    </h3>
+                                    <div className="flex-1 overflow-y-auto">
+                                        <div className="space-y-3">
+                                            {timeDeck.map(card => (
+                                                <div key={`time-${card.id}`} className="bg-green-600/30 border border-green-400/50 rounded-lg p-3 transition-all duration-300">
+                                                    <div className="flex items-center justify-between mb-2">
+                                                        <h4 className="text-white font-bold text-sm flex items-center gap-2">
+                                                            {card.name}
+                                                            <span className="text-green-400 text-xs">✅</span>
+                                                        </h4>
+                                                        <span className="text-green-200 text-xs bg-green-600/40 px-2 py-1 rounded">
+                                                            {card.rarity}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                        <span className="text-lg">{getElementIcon(card.element || '')}</span>
+                                                        <span className="text-white text-sm">
+                                                            {card.currentLifeElements}/{card.maxLifeElements} {getElementName(card.element || '')}
+                                                        </span>
+                                                        <span className="text-green-300 text-xs bg-green-600/30 px-1 py-0.5 rounded">
+                                                            已激活
+                                                        </span>
+                                                        <span className="text-green-200 text-xs bg-green-600/30 px-1 py-0.5 rounded">
+                                                            ⏰天时
+                                                        </span>
+                                                    </div>
+                                                    <div className="text-green-200 text-xs bg-green-600/20 rounded px-2 py-1">
+                                                        {card.effect}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        
+                                        {timeDeck.length === 0 && (
+                                            <div className="flex items-center justify-center h-full text-green-300 text-center text-sm">
+                                                <div>
+                                                    <div className="text-3xl mb-2">⏰</div>
+                                                    <div>当前时间未激活时间神煞</div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
                             
-                                                        {/* 卡池统计 */}
+                            {/* 卡池统计 */}
                             <div className="bg-gradient-to-r from-purple-600/20 to-cyan-600/20 rounded-xl p-4 mb-6">
-                            <h3 className="text-lg font-bold text-white mb-3 text-center">📊 神煞激活统计</h3>
-                            <div className="grid md:grid-cols-4 gap-4 text-center">
-                                <div>
-                                    <div className="text-2xl mb-1">👤</div>
-                                    <div className="text-white font-bold">{protagonistDeck.length}</div>
-                                    <div className="text-purple-200 text-sm">主角神煞</div>
-                                    <div className="text-purple-300 text-xs">已激活数量</div>
-                                </div>
-                                <div>
-                                    <div className="text-2xl mb-1">🔧</div>
-                                    <div className="text-white font-bold">{builderDeck.length}</div>
-                                    <div className="text-orange-200 text-sm">构筑神煞</div>
-                                    <div className="text-orange-300 text-xs">已激活数量</div>
-                                </div>
-                                <div>
-                                    <div className="text-2xl mb-1">🕐</div>
-                                    <div className="text-white font-bold">{timeDeck.length}</div>
-                                    <div className="text-green-200 text-sm">时间神煞</div>
-                                    <div className="text-green-300 text-xs">已激活数量</div>
-                                </div>
-                                <div>
-                                    <div className="text-2xl mb-1">🃏</div>
-                                    <div className="text-white font-bold">
-                                        {protagonistDeck.length + builderDeck.length + timeDeck.length}
+                                <h3 className="text-lg font-bold text-white mb-3 text-center">📊 神煞激活统计</h3>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                                    <div>
+                                        <div className="text-2xl mb-1">👤</div>
+                                        <div className="text-white font-bold">{protagonistDeck.length}</div>
+                                        <div className="text-purple-200 text-sm">主角神煞</div>
+                                        <div className="text-purple-300 text-xs">已激活数量</div>
                                     </div>
-                                    <div className="text-cyan-200 text-sm">总神煞数</div>
-                                    <div className="text-cyan-300 text-xs">已激活数量</div>
+                                    <div>
+                                        <div className="text-2xl mb-1">🔧</div>
+                                        <div className="text-white font-bold">{builderDeck.length}</div>
+                                        <div className="text-orange-200 text-sm">构筑神煞</div>
+                                        <div className="text-orange-300 text-xs">已激活数量</div>
+                                    </div>
+                                    <div>
+                                        <div className="text-2xl mb-1">🕐</div>
+                                        <div className="text-white font-bold">{timeDeck.length}</div>
+                                        <div className="text-green-200 text-sm">时间神煞</div>
+                                        <div className="text-green-300 text-xs">已激活数量</div>
+                                    </div>
+                                    <div>
+                                        <div className="text-2xl mb-1">🃏</div>
+                                        <div className="text-white font-bold">
+                                            {protagonistDeck.length + builderDeck.length + timeDeck.length}
+                                        </div>
+                                        <div className="text-cyan-200 text-sm">总神煞数</div>
+                                        <div className="text-cyan-300 text-xs">已激活数量</div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
+                    )}
+
+                    {/* 构筑完成后的操作 */}
+                    {isBuilt && (
+                        <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-6 mb-8">
+                            <h2 className="text-xl lg:text-2xl font-bold text-white mb-4 text-center">
+                                ⚔️ 构筑完成
+                            </h2>
+                            
+                            <div className="text-center">
+                                <Link
+                                    to="/phaser-lzore"
+                                    className="inline-block bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-4 px-6 lg:px-8 rounded-xl shadow-lg transform hover:scale-105 transition-all duration-300"
+                                >
+                                    🎮 进入战斗
+                                </Link>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* 返回首页 */}
+                    <div className="text-center pb-8">
+                        <Link
+                            to="/"
+                            className="inline-block bg-gray-600/30 hover:bg-gray-600/50 border border-gray-400/40 text-white font-bold py-3 px-6 rounded-xl transition-all duration-300"
+                        >
+                            🏠 返回首页
+                        </Link>
+                    </div>
+                </div>
+
+                {/* 右侧总卡池 - 大屏显示 */}
+                {isBuilt && (
+                    <div style={{height: 'calc(100svh - 18px)',paddingBottom: '45px',marginLeft: '5px'}} className="hidden lg:flex w-80 bg-gradient-to-br from-yellow-600/20 to-amber-600/20 backdrop-blur-sm border-l border-yellow-400/30 p-4 flex-col h-svh">
+                        <h3 className="text-lg font-bold text-white mb-2 text-center flex items-center justify-center gap-2">
+                            <span className="text-2xl">🎴</span>
+                            总卡池
+                        </h3>
+                        <div className="text-center text-yellow-200 text-xs mb-3">
+                            总计: {[...protagonistDeck, ...builderDeck, ...timeDeck].length} 张 
+                            <br />
+                            (👤{protagonistDeck.length} + 🔧{builderDeck.length} + 🕐{timeDeck.length})
+                        </div>
+                        <div className="flex-1 overflow-y-auto">
+                            <div className="space-y-3">
+                                {[...protagonistDeck, ...builderDeck, ...timeDeck].map((card, index) => (
+                                    <div key={`total-${card.id}-${index}`} className="bg-yellow-600/30 border border-yellow-400/50 rounded-lg p-3 transition-all duration-300">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <h4 className="text-white font-bold text-sm flex items-center gap-2">
+                                                {card.name}
+                                                <span className="text-green-400 text-xs">✅</span>
+                                            </h4>
+                                            <div className="flex items-center gap-1">
+                                                <span className="text-yellow-200 text-xs bg-yellow-600/40 px-2 py-1 rounded">
+                                                    {card.rarity}
+                                                </span>
+                                                {/* 来源标识 */}
+                                                {protagonistDeck.includes(card) && (
+                                                    <span className="text-purple-200 text-xs bg-purple-600/40 px-1 py-0.5 rounded">👤</span>
+                                                )}
+                                                {builderDeck.includes(card) && (
+                                                    <span className="text-orange-200 text-xs bg-orange-600/40 px-1 py-0.5 rounded">🔧</span>
+                                                )}
+                                                {timeDeck.includes(card) && (
+                                                    <span className="text-green-200 text-xs bg-green-600/40 px-1 py-0.5 rounded">🕐</span>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <span className="text-lg">{getElementIcon(card.element || '')}</span>
+                                            <span className="text-white text-sm">
+                                                {card.currentLifeElements}/{card.maxLifeElements} {getElementName(card.element || '')}
+                                            </span>
+                                            <span className="text-green-300 text-xs bg-green-600/30 px-1 py-0.5 rounded">
+                                                已激活
+                                            </span>
+                                        </div>
+                                        <div className="text-yellow-200 text-xs bg-yellow-600/20 rounded px-2 py-1">
+                                            {card.effect}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                            
+                            {[...protagonistDeck, ...builderDeck, ...timeDeck].length === 0 && (
+                                <div className="flex items-center justify-center h-full text-yellow-300 text-center text-sm">
+                                    <div>
+                                        <div className="text-3xl mb-2">🌙</div>
+                                        <div>暂无激活的神煞卡牌</div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                {/* 移动端总卡池 - 底部显示 */}
+                {isBuilt && (
+                    <div className="lg:hidden bg-gradient-to-br from-yellow-600/20 to-amber-600/20 backdrop-blur-sm border-t border-yellow-400/30 p-4">
+                        <h3 className="text-lg font-bold text-white mb-2 text-center flex items-center justify-center gap-2">
+                            <span className="text-2xl">🎴</span>
+                            总卡池
+                        </h3>
+                        <div className="text-center text-yellow-200 text-xs mb-3">
+                            总计: {[...protagonistDeck, ...builderDeck, ...timeDeck].length} 张 
+                            (👤{protagonistDeck.length} + 🔧{builderDeck.length} + 🕐{timeDeck.length})
                         </div>
                         
-                        {/* 右侧总卡池 - 适当间距布局 */}
-                        <div className="fixed top-0 right-6 w-80 bg-gradient-to-br from-yellow-600/20 to-amber-600/20 backdrop-blur-sm border border-yellow-400/30 rounded-lg p-4 h-screen flex flex-col z-10">
-                            <h3 className="text-lg font-bold text-white mb-2 text-center flex items-center justify-center gap-2">
-                                <span className="text-2xl">🎴</span>
-                                总卡池
-                            </h3>
-                            <div className="text-center text-yellow-200 text-xs mb-3">
-                                总计: {[...protagonistDeck, ...builderDeck, ...timeDeck].length} 张 
-                                (👤{protagonistDeck.length} + 🔧{builderDeck.length} + 🕐{timeDeck.length})
-                            </div>
-                            <div className="flex-1 overflow-y-auto">
+                        {/* 可折叠的卡池内容 */}
+                        <details className="group">
+                            <summary className="cursor-pointer bg-yellow-600/30 rounded-lg p-2 text-center text-white font-bold mb-3 group-open:mb-3">
+                                🔽 展开查看卡牌详情 ({[...protagonistDeck, ...builderDeck, ...timeDeck].length}张)
+                            </summary>
+                            <div className="max-h-60 overflow-y-auto">
                                 <div className="space-y-3">
                                     {[...protagonistDeck, ...builderDeck, ...timeDeck].map((card, index) => (
-                                        <div key={`total-${card.id}-${index}`} className="bg-yellow-600/30 border border-yellow-400/50 rounded-lg p-3 transition-all duration-300">
+                                        <div key={`mobile-total-${card.id}-${index}`} className="bg-yellow-600/30 border border-yellow-400/50 rounded-lg p-3">
                                             <div className="flex items-center justify-between mb-2">
                                                 <h4 className="text-white font-bold text-sm flex items-center gap-2">
                                                     {card.name}
@@ -849,46 +952,19 @@ export const DeckBuilder: React.FC = () => {
                                 </div>
                                 
                                 {[...protagonistDeck, ...builderDeck, ...timeDeck].length === 0 && (
-                                    <div className="flex items-center justify-center h-full text-yellow-300 text-center text-sm">
+                                    <div className="flex items-center justify-center h-20 text-yellow-300 text-center text-sm">
                                         <div>
-                                            <div className="text-3xl mb-2">🌙</div>
+                                            <div className="text-2xl mb-1">🌙</div>
                                             <div>暂无激活的神煞卡牌</div>
                                         </div>
                                     </div>
                                 )}
                             </div>
-                        </div>
+                        </details>
                     </div>
                 )}
-
-                {/* 构筑完成后的操作 */}
-                {isBuilt && (
-                    <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-6 mb-8 mr-88">
-                        <h2 className="text-2xl font-bold text-white mb-4 text-center">
-                            ⚔️ 构筑完成
-                        </h2>
-                        
-                        <div className="text-center">
-                            <Link
-                                to="/phaser-lzore"
-                                className="inline-block bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-4 px-8 rounded-xl shadow-lg transform hover:scale-105 transition-all duration-300"
-                            >
-                                🎮 进入战斗
-                            </Link>
-                        </div>
-                    </div>
-                )}
-
-                {/* 返回首页 */}
-                <div className="text-center mr-88">
-                    <Link
-                        to="/"
-                        className="inline-block bg-gray-600/30 hover:bg-gray-600/50 border border-gray-400/40 text-white font-bold py-3 px-6 rounded-xl transition-all duration-300"
-                    >
-                        🏠 返回首页
-                    </Link>
-                </div>
             </div>
+        </div>
         </div>
     );
 }; 
