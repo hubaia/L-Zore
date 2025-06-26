@@ -35,14 +35,22 @@ export class GameStateManager {
         getPlayerHandCount: () => number;
         getPlacedCardsCount: () => number;
         getDiscardPileStatus: () => { playerDiscardCount: number; opponentDiscardCount: number };
+        getHandCounts: () => { playerHandCount: number; opponentHandCount: number };
+        getDeckCounts: () => { playerDeckCount: number; opponentDeckCount: number };
     }): void {
+        // 获取手牌和牌库数据
+        const handCounts = callbacks.getHandCounts();
+        const deckCounts = callbacks.getDeckCounts();
+        const discardCounts = callbacks.getDiscardPileStatus();
+        
         // 更新React UI数据
         const gameStateData = {
             playerHealth: this.gameState.playerRemainingElements,  // 玩家剩余元素（8枚）
             opponentHealth: this.gameState.opponentRemainingElements,  // 对手剩余元素（8枚）
             playerEnergy: this.calculatePlayerEnergy(),  // 根据八字计算能量
             currentTurn: this.gameState.currentCycle,
-            playerHandCount: callbacks.getPlayerHandCount(),
+            playerHandCount: handCounts.playerHandCount,
+            opponentHandCount: handCounts.opponentHandCount,
             isPlayerTurn: this.gameState.canPlayerUseCards,
             battlefieldCards: callbacks.getPlacedCardsCount(),
             gameTime: this.gameState.gameTime,
@@ -61,8 +69,11 @@ export class GameStateManager {
             isPaused: this.gameState.isPaused,
             pauseReason: this.gameState.pauseReason,
             
-            // 弃牌堆状态
-            ...callbacks.getDiscardPileStatus()
+            // 卡组和弃牌堆信息
+            playerDeckCount: deckCounts.playerDeckCount,
+            opponentDeckCount: deckCounts.opponentDeckCount,
+            playerDiscardCount: discardCounts.playerDiscardCount,
+            opponentDiscardCount: discardCounts.opponentDiscardCount
         };
 
         // 发送状态更新事件给React UI

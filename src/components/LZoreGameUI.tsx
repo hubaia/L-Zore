@@ -45,7 +45,14 @@ export const LZoreGameUI: React.FC = () => {
             hour: { gan: '辛', zhi: '未' }
         },
         playerRemainingElements: 8,
-        opponentRemainingElements: 8
+        opponentRemainingElements: 8,
+        
+        // 卡组和弃牌堆信息
+        playerDiscardCount: 0,
+        opponentDiscardCount: 0,
+        playerDeckCount: 25, // 预设初始卡组数量
+        opponentDeckCount: 25,
+        opponentHandCount: 5
     });
 
     // 效果面板状态 - 多目标分配版
@@ -370,6 +377,124 @@ export const LZoreGameUI: React.FC = () => {
                             className="bg-gradient-to-r from-red-500 to-pink-500 h-2 rounded-full transition-all duration-300"
                             style={{ width: `${(gameState.opponentRemainingElements / 8) * 100}%` }}
                         ></div>
+                    </div>
+                </div>
+            </div>
+
+            {/* 顶部中央 - 对手卡组和弃牌区信息 */}
+            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 pointer-events-auto">
+                <div className="flex items-center gap-4">
+                    {/* 对手卡组 */}
+                    <div className="bg-red-900/80 border-2 border-red-500/60 rounded-xl p-3 backdrop-blur-sm group hover:border-red-400/80 transition-all duration-300">
+                        <div className="flex items-center gap-3">
+                            <div className="relative">
+                                <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-red-700 rounded-lg flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform duration-300">
+                                    <span className="text-xl">🃞</span>
+                                </div>
+                                <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-400 rounded-full flex items-center justify-center text-xs font-bold text-black">
+                                    {gameState.opponentDeckCount}
+                                </div>
+                            </div>
+                            <div className="text-center">
+                                <div className="text-red-300 text-xs font-bold">对手牌库</div>
+                                <div className="text-red-200 text-xs opacity-80">剩余卡牌</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* 对手手牌 */}
+                    <div className="bg-red-800/80 border-2 border-red-600/60 rounded-xl p-3 backdrop-blur-sm group hover:border-red-500/80 transition-all duration-300">
+                        <div className="flex items-center gap-3">
+                            <div className="relative">
+                                <div className="w-10 h-10 bg-gradient-to-br from-red-600 to-red-800 rounded-lg flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform duration-300">
+                                    <span className="text-xl">🃏</span>
+                                </div>
+                                <div className="absolute -top-1 -right-1 w-5 h-5 bg-orange-400 rounded-full flex items-center justify-center text-xs font-bold text-black">
+                                    {gameState.opponentHandCount}
+                                </div>
+                            </div>
+                            <div className="text-center">
+                                <div className="text-red-300 text-xs font-bold">对手手牌</div>
+                                <div className="text-red-200 text-xs opacity-80">当前持有</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* 对手弃牌堆 */}
+                    <div className="bg-red-700/80 border-2 border-gray-500/60 rounded-xl p-3 backdrop-blur-sm group hover:border-gray-400/80 transition-all duration-300">
+                        <div className="flex items-center gap-3">
+                            <div className="relative">
+                                <div className="w-10 h-10 bg-gradient-to-br from-gray-600 to-gray-800 rounded-lg flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform duration-300">
+                                    <span className="text-xl">🗑️</span>
+                                </div>
+                                <div className="absolute -top-1 -right-1 w-5 h-5 bg-gray-400 rounded-full flex items-center justify-center text-xs font-bold text-black">
+                                    {gameState.opponentDiscardCount}
+                                </div>
+                            </div>
+                            <div className="text-center">
+                                <div className="text-gray-300 text-xs font-bold">对手弃牌</div>
+                                <div className="text-gray-200 text-xs opacity-80">已废弃</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* 底部中央 - 玩家卡组和弃牌区信息 */}
+            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 pointer-events-auto">
+                <div className="flex items-center gap-4">
+                    {/* 玩家弃牌堆 */}
+                    <div className="bg-blue-700/80 border-2 border-gray-500/60 rounded-xl p-3 backdrop-blur-sm group hover:border-gray-400/80 transition-all duration-300 hover:scale-105">
+                        <div className="flex items-center gap-3">
+                            <div className="relative">
+                                <div className="w-10 h-10 bg-gradient-to-br from-gray-600 to-gray-800 rounded-lg flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform duration-300">
+                                    <span className="text-xl">🗑️</span>
+                                </div>
+                                <div className="absolute -top-1 -right-1 w-5 h-5 bg-gray-400 rounded-full flex items-center justify-center text-xs font-bold text-black">
+                                    {gameState.playerDiscardCount}
+                                </div>
+                            </div>
+                            <div className="text-center">
+                                <div className="text-gray-300 text-xs font-bold">我方弃牌</div>
+                                <div className="text-gray-200 text-xs opacity-80">已废弃</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* 玩家手牌 */}
+                    <div className="bg-cyan-800/80 border-2 border-cyan-600/60 rounded-xl p-3 backdrop-blur-sm group hover:border-cyan-500/80 transition-all duration-300 hover:scale-105">
+                        <div className="flex items-center gap-3">
+                            <div className="relative">
+                                <div className="w-10 h-10 bg-gradient-to-br from-cyan-600 to-cyan-800 rounded-lg flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform duration-300">
+                                    <span className="text-xl">🃏</span>
+                                </div>
+                                <div className="absolute -top-1 -right-1 w-5 h-5 bg-cyan-400 rounded-full flex items-center justify-center text-xs font-bold text-black">
+                                    {gameState.playerHandCount}
+                                </div>
+                            </div>
+                            <div className="text-center">
+                                <div className="text-cyan-300 text-xs font-bold">我方手牌</div>
+                                <div className="text-cyan-200 text-xs opacity-80">当前持有</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* 玩家卡组 */}
+                    <div className="bg-blue-900/80 border-2 border-blue-500/60 rounded-xl p-3 backdrop-blur-sm group hover:border-blue-400/80 transition-all duration-300 hover:scale-105">
+                        <div className="flex items-center gap-3">
+                            <div className="relative">
+                                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform duration-300">
+                                    <span className="text-xl">🃞</span>
+                                </div>
+                                <div className="absolute -top-1 -right-1 w-5 h-5 bg-blue-400 rounded-full flex items-center justify-center text-xs font-bold text-black">
+                                    {gameState.playerDeckCount}
+                                </div>
+                            </div>
+                            <div className="text-center">
+                                <div className="text-blue-300 text-xs font-bold">我方牌库</div>
+                                <div className="text-blue-200 text-xs opacity-80">剩余卡牌</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

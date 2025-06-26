@@ -22,6 +22,9 @@ export class CardManager {
     private discardPile: LZoreCard[] = [];
     private opponentDiscardPile: LZoreCard[] = [];
     private opponentCards: LZoreCard[] = [];
+    // 卡组（牌库）数量追踪
+    private playerDeckCount: number = 25; // 初始牌库数量
+    private opponentDeckCount: number = 25;
     
     constructor(
         scene: Phaser.Scene, 
@@ -80,6 +83,14 @@ export class CardManager {
             return null;
         }
         
+        if (this.playerDeckCount <= 0) {
+            this.showMessage('牌库已空！', 'error');
+            return null;
+        }
+        
+        // 减少牌库数量
+        this.playerDeckCount--;
+        
         // 随机选择一张神煞卡
         const randomCard = this.cardDatabase[Math.floor(Math.random() * this.cardDatabase.length)];
         
@@ -103,7 +114,7 @@ export class CardManager {
             ease: 'Back.easeOut'
         });
         
-        this.showMessage(`抽到了 ${randomCard.name}！`, 'success');
+        this.showMessage(`抽到了 ${randomCard.name}！剩余牌库：${this.playerDeckCount}张`, 'success');
         
         return cardContainer;
     }
@@ -120,6 +131,13 @@ export class CardManager {
         if (this.opponentHand.children.entries.length >= 7) {
             return null; // 手牌已满
         }
+        
+        if (this.opponentDeckCount <= 0) {
+            return null; // 牌库已空
+        }
+        
+        // 减少对手牌库数量
+        this.opponentDeckCount--;
         
         // 从卡牌数据库中随机选择一张卡
         const randomCard = this.cardDatabase[Math.floor(Math.random() * this.cardDatabase.length)];
@@ -315,6 +333,16 @@ export class CardManager {
         return {
             playerDiscardCount: this.discardPile.length,
             opponentDiscardCount: this.opponentDiscardPile.length
+        };
+    }
+    
+    /**
+     * 获取牌库数量信息
+     */
+    getDeckCounts(): { playerDeckCount: number; opponentDeckCount: number } {
+        return {
+            playerDeckCount: this.playerDeckCount,
+            opponentDeckCount: this.opponentDeckCount
         };
     }
     

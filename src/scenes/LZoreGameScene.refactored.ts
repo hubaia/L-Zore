@@ -732,7 +732,9 @@ export class LZoreGameScene extends Phaser.Scene {
         this.gameStateManager.updateGameStateUI({
             getPlayerHandCount: () => this.cardManager.getHandCounts().playerHandCount,
             getPlacedCardsCount: () => this.placedCards.length,
-            getDiscardPileStatus: () => this.cardManager.getDiscardPileStatus()
+            getDiscardPileStatus: () => this.cardManager.getDiscardPileStatus(),
+            getHandCounts: () => this.cardManager.getHandCounts(),
+            getDeckCounts: () => ({ playerDeckCount: 25, opponentDeckCount: 25 }) // 临时硬编码
         });
     }
 
