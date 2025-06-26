@@ -212,7 +212,7 @@ export const LZoreGameUI: React.FC = () => {
     const handleMultiTargetExecute = () => {
         const hasAllocations = Object.keys(effectPanel.targetAllocations).length > 0;
         if (!hasAllocations) {
-            // 可以添加错误提示
+            alert('⚠️ 请先分配元素到目标！');
             return;
         }
 
@@ -512,6 +512,11 @@ export const LZoreGameUI: React.FC = () => {
                                         }`}>
                                             {effectPanel.remainingValue}
                                         </div>
+                                        {effectPanel.remainingValue > 0 && (
+                                            <div className="text-orange-300 text-xs mt-1">
+                                                可选择分配
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
 
@@ -824,6 +829,11 @@ export const LZoreGameUI: React.FC = () => {
                                         {(() => {
                                             if (effectPanel.isExecuting) {
                                                 return '正在执行中...';
+                                            }
+                                            
+                                            // 检查是否有任何分配
+                                            if (Object.keys(effectPanel.targetAllocations).length === 0) {
+                                                return '请选择目标分配';
                                             }
                                             
                                             // 检查凶神规则
