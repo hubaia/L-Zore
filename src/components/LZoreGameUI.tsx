@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useCurrentScene, useEvent, useRelativeScale } from 'phaser-react-ui';
 import { CardHistoryPanel } from './CardHistoryPanel';
 
@@ -142,6 +142,36 @@ export const LZoreGameUI: React.FC = () => {
     //     setGameStats(prev => ({ ...prev, ...stats }));
     // }, []);
 
+    // 添加执行中状态的超时保护
+    useEffect(() => {
+        if (effectPanel.isExecuting) {
+            console.log('⏰ React UI: 设置3秒超时保护');
+            const timeoutId = setTimeout(() => {
+                console.log('⏰ React UI: 执行超时，强制重置状态');
+                setEffectPanel(prev => {
+                    if (prev.isExecuting) {
+                        console.log('🔧 React UI: 强制关闭执行中状态');
+                        return { 
+                            ...prev, 
+                            isOpen: false, 
+                            isExecuting: false,
+                            selectedTarget: null,
+                            targetAllocations: {},
+                            totalAllocated: 0,
+                            remainingValue: prev.currentValue
+                        };
+                    }
+                    return prev;
+                });
+            }, 3000);
+
+            return () => {
+                console.log('🔧 React UI: 清理执行超时计时器');
+                clearTimeout(timeoutId);
+            };
+        }
+    }, [effectPanel.isExecuting]);
+
     // 游戏操作函数
     const handleDrawCard = () => {
         scene.events.emit('drawCard');
@@ -217,6 +247,12 @@ export const LZoreGameUI: React.FC = () => {
     };
 
     const handleMultiTargetExecute = () => {
+        // 防止重复执行
+        if (effectPanel.isExecuting) {
+            console.log('⚠️ React UI: 正在执行中，忽略重复点击');
+            return;
+        }
+
         const hasAllocations = Object.keys(effectPanel.targetAllocations).length > 0;
         if (!hasAllocations) {
             alert('⚠️ 请先分配元素到目标！');
@@ -242,46 +278,24 @@ export const LZoreGameUI: React.FC = () => {
 
         console.log('🎯 React UI: 发送多目标执行事件到Phaser');
 
-        // 发送多目标执行效果事件到Phaser
-        scene.events.emit('executeMultiTargetEffect', {
-            cardData: effectPanel.cardData,
-            actionType: effectPanel.actionType,
-            allocations: effectPanel.targetAllocations,
-            targets: effectPanel.targets
-        });
-
-        // 显示执行中状态
+        // 立即设置执行中状态，防止重复点击
         setEffectPanel(prev => ({ 
             ...prev, 
             isExecuting: true
         }));
 
-        // 设置超时保护机制，1.5秒后强制关闭（快速响应）
-        const timeoutId = setTimeout(() => {
-            console.log('⏰ React UI: 执行超时，检查当前状态...');
-            setEffectPanel(prev => {
-                console.log('⏰ React UI: 超时检查 - isOpen:', prev.isOpen, 'isExecuting:', prev.isExecuting);
-                if (prev.isOpen && prev.isExecuting) {
-                    console.log('⏰ React UI: 状态异常，强制关闭面板');
-                    // 直接在React端关闭，不依赖Phaser事件
-                    return { 
-                        ...prev, 
-                        isOpen: false, 
-                        isExecuting: false,
-                        selectedTarget: null,
-                        targetAllocations: {},
-                        totalAllocated: 0,
-                        remainingValue: prev.currentValue
-                    };
-                } else {
-                    console.log('⏰ React UI: 面板状态正常，无需强制关闭');
-                }
-                return prev;
+        // 短暂延迟后发送事件，确保状态已更新
+        setTimeout(() => {
+            // 发送多目标执行效果事件到Phaser
+            scene.events.emit('executeMultiTargetEffect', {
+                cardData: effectPanel.cardData,
+                actionType: effectPanel.actionType,
+                allocations: effectPanel.targetAllocations,
+                targets: effectPanel.targets
             });
-        }, 1500);
-        
-        // 如果组件卸载，清理超时
-        return () => clearTimeout(timeoutId);
+            
+            console.log('✅ React UI: 执行事件已发送到Phaser');
+        }, 50);
     };
 
     // 获取卡牌类型文本

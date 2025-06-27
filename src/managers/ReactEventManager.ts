@@ -327,14 +327,17 @@ export class ReactEventManager {
                 this.startDamageSettlement(cardData, actionType, targetCount, totalValue);
                 
                 // 结算完成后重置执行锁
-                this.scene.time.delayedCall(500, () => {
+                this.scene.time.delayedCall(300, () => {
                     this.isExecutingEffect = false;
                     console.log('🔓 React事件管理器: 效果执行锁已重置');
                 });
             });
         } else {
             // 如果不进入结算流程，立即重置执行锁
-            this.isExecutingEffect = false;
+            this.scene.time.delayedCall(100, () => {
+                this.isExecutingEffect = false;
+                console.log('🔓 React事件管理器: 执行锁已重置（无结算流程）');
+            });
         }
         
         // 更新UI状态
