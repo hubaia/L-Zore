@@ -356,7 +356,7 @@ export class LZoreGameScene extends Phaser.Scene {
         // 初始化UI管理器
         this.uiManager = new UIManager(this, this.gameState);
         
-        // 初始化音频管理器
+        // 初始化音频管理器（不自动播放BGM）
         this.audioManager = new AudioManager(this);
         
         // 初始化资源管理器

@@ -49,8 +49,10 @@ export class AudioManager {
                 
                 clearTimeout(timeoutId);
                 
-                // 初始化音效系统
-                await this.initSFXSystem();
+                            // 初始化音效系统
+            await this.initSFXSystem();
+            
+            console.log('🎵 AudioManager: 初始化完成，BGM将在loading完成后播放');
                 
             } catch (fetchError) {
                 clearTimeout(timeoutId);

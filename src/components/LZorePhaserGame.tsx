@@ -73,6 +73,20 @@ export const LZorePhaserGame: React.FC<LZorePhaserGameProps> = ({
                 // 延迟隐藏loading界面，让用户看到100%完成状态
                 setTimeout(() => {
                     setIsLoading(false);
+                    
+                    // loading完成后开始播放BGM
+                    console.log('🎵 Loading完成，开始播放背景音乐');
+                    try {
+                        const audioManager = (scene as any).audioManager;
+                        if (audioManager && audioManager.autoStartBackgroundMusic) {
+                            audioManager.autoStartBackgroundMusic();
+                            console.log('✅ BGM已在loading完成后启动');
+                        } else {
+                            console.warn('⚠️ AudioManager或autoStartBackgroundMusic方法不存在');
+                        }
+                    } catch (error) {
+                        console.error('❌ BGM启动失败:', error);
+                    }
                 }, 500);
             });
             
