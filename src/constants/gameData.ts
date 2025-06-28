@@ -7,12 +7,18 @@ export const CARD_DATABASE: LZoreCard[] = [
     {
         id: 'tianyiguiren',
         name: '天乙贵人',
+        personalName: '司天',
+        title: '金甲元帅',
+        fullName: '司天·金甲元帅',
+        personality: '正义凛然，护主忠诚，遇难必救',
+        catchphrase: '有本将在，主公无忧！',
+        biography: '天庭第一武将，金甲银枪，威震三界。身披不坏金甲，手持诛邪银枪，是天帝座下最可信赖的护卫统领。',
         type: 'auspicious',
         element: 'metal',
         power: 4,
         rarity: '⭐⭐⭐',
         description: '最高吉星，避免厄运，遇事有人帮',
-        effect: '保护己方4枚元素不被中和',
+        effect: '【金甲护主】保护己方4枚元素不被中和',
         // 天乙贵人出现条件：甲戊见牛羊，乙己鼠猴乡
         // 涉及天干：甲、戊、乙、己 (4个) + 地支：丑、未、子、申 (4个) = 8个天干地支
         appearConditions: [
@@ -34,12 +40,18 @@ export const CARD_DATABASE: LZoreCard[] = [
     {
         id: 'wenchang',
         name: '文昌贵人',
+        personalName: '文渊',
+        title: '墨羽书生',
+        fullName: '文渊·墨羽书生',
+        personality: '温文尔雅，博学多才，点化众生',
+        catchphrase: '文以载道，智者无敌。',
+        biography: '文曲星转世，手持墨羽笔，才华横溢。通晓天下文章，精通诗词歌赋，能以笔墨点化万物，启发智慧。',
         type: 'auspicious',
         element: 'water',
         power: 2,
         rarity: '⭐⭐',
         description: '聪明擅艺，主聪明过人，利考试学术',
-        effect: '中和对方2枚元素，智慧加成',
+        effect: '【墨羽点化】中和对方2枚元素，智慧加成',
         // 文昌贵人出现条件：甲乙巳午报君知
         // 涉及天干：甲、乙 (2个) + 地支：巳、午 (2个) = 4个天干地支
         appearConditions: [
@@ -61,12 +73,18 @@ export const CARD_DATABASE: LZoreCard[] = [
     {
         id: 'yangren',
         name: '羊刃',
+        personalName: '血刃',
+        title: '狂战魔王',
+        fullName: '血刃·狂战魔王',
+        personality: '嗜血好战，狂暴无双，伤敌伤己',
+        catchphrase: '血刃所指，万物皆斩！',
+        biography: '上古战神堕落而成，手持血色巨刃。曾是天庭战神，因嗜血成性被贬下界，但战斗力依然恐怖至极。',
         type: 'inauspicious',
         element: 'fire',
         power: 3,
         rarity: '⭐⭐⭐',
         description: '刚烈冲动，易惹是非，吉则勇猛',
-        effect: '中和对方3枚元素，可能反噬',
+        effect: '【血刃狂斩】中和对方3枚元素，可能反噬',
         // 羊刃出现条件：甲羊乙猴丙戊龙
         // 涉及天干：甲、乙、丙、戊 (4个) + 地支：未、申、辰 (3个) = 7个天干地支
         appearConditions: [
@@ -88,12 +106,18 @@ export const CARD_DATABASE: LZoreCard[] = [
     {
         id: 'huagai',
         name: '华盖',
+        personalName: '隐玄',
+        title: '华盖隐士',
+        fullName: '隐玄·华盖隐士',
+        personality: '超脱世俗，神秘莫测，隐藏意图',
+        catchphrase: '大隐隐于市，真相藏于心。',
+        biography: '世外高人，精通奇门遁甲。居住在云雾缭绕的华盖山中，洞察天机而不言，知晓真相而隐匿。',
         type: 'special',
         element: 'earth',
         power: 1,
         rarity: '⭐',
         description: '性情恬淡资质聪颖，易倾向宗教艺术',
-        effect: '隐藏战术意图，属性转换',
+        effect: '【华盖遁术】隐藏战术意图，属性转换',
         // 华盖出现条件：寅午戌见戌，亥卯未见未
         // 涉及地支：寅、午、戌 或 亥、卯、未 (3个) = 3个天干地支
         appearConditions: [
@@ -115,12 +139,18 @@ export const CARD_DATABASE: LZoreCard[] = [
     {
         id: 'yima',
         name: '驿马',
+        personalName: '疾风',
+        title: '游侠行者',
+        fullName: '疾风·游侠行者',
+        personality: '来去如风，行动迅捷，四海为家',
+        catchphrase: '风来了，我也来了！',
+        biography: '江湖游侠，骑着神骏千里马。仗剑走天涯，行侠仗义，踪迹遍及九州大地，行动迅捷如风。',
         type: 'special',
         element: 'fire',
         power: 2,
         rarity: '⭐⭐',
         description: '主奔波变动异地发展，吉则升迁远行',
-        effect: '增加行动次数，快速移动',
+        effect: '【疾风千里】增加行动次数，快速移动',
         // 驿马出现条件：申子辰马在寅，寅午戌马在申
         // 涉及地支：申、子、辰、寅 或 寅、午、戌、申 (4个) = 4个天干地支
         appearConditions: [

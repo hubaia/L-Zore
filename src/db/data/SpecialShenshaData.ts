@@ -8,6 +8,12 @@ export const specialShenshaData: ShenshaRecord[] = [
     {
         id: 'huagai',
         name: '华盖',
+        personalName: '隐玄',
+        title: '华盖隐士',
+        fullName: '隐玄·华盖隐士',
+        personality: '超脱世俗，神秘莫测，隐藏意图',
+        catchphrase: '大隐隐于市，真相藏于心。',
+        biography: '世外高人，精通奇门遁甲。居住在云雾缭绕的华盖山中，洞察天机而不言，知晓真相而隐匿。',
         category: '特殊神煞',
         rarity: '⭐',
         element: '土',
@@ -15,7 +21,7 @@ export const specialShenshaData: ShenshaRecord[] = [
         type: 'special',
         lookupMethod: '申子辰见辰，亥卯未见未，寅午戌见戌，巳酉丑见丑',
         meaning: '性情恬淡资质聪颖，但难免孤独，易倾向哲学宗教艺术',
-        gameEffect: '神秘型，隐藏战术意图',
+        gameEffect: '【华盖遁术】神秘型，隐藏战术意图',
         detailedLookup: {
             method: '按三合局查墓库',
             conditions: [
@@ -27,6 +33,12 @@ export const specialShenshaData: ShenshaRecord[] = [
     {
         id: 'yima',
         name: '驿马',
+        personalName: '疾风',
+        title: '游侠行者',
+        fullName: '疾风·游侠行者',
+        personality: '来去如风，行动迅捷，四海为家',
+        catchphrase: '风来了，我也来了！',
+        biography: '江湖游侠，骑着神骏千里马。仗剑走天涯，行侠仗义，踪迹遍及九州大地，行动迅捷如风。',
         category: '特殊神煞',
         rarity: '⭐⭐',
         element: '火',
@@ -34,7 +46,7 @@ export const specialShenshaData: ShenshaRecord[] = [
         type: 'special',
         lookupMethod: '申子辰马在寅，寅午戌马在申，巳酉丑马在亥，亥卯未马在巳',
         meaning: '主奔波变动异地发展，吉则升迁远行，凶则劳碌漂泊',
-        gameEffect: '快速型，增加行动次数',
+        gameEffect: '【疾风千里】快速型，增加行动次数',
         detailedLookup: {
             method: '按三合局查对冲',
             conditions: [
@@ -46,6 +58,12 @@ export const specialShenshaData: ShenshaRecord[] = [
     {
         id: 'jiangxing',
         name: '将星',
+        personalName: '统帅',
+        title: '霸王将军',
+        fullName: '统帅·霸王将军',
+        personality: '威严霸气，统率无双，指挥若定',
+        catchphrase: '将令如山，万军听命！',
+        biography: '天生的军事统帅，指挥千军万马。身着黄金战甲，手持指挥令旗，能统率所有神煞协同作战。',
         category: '特殊神煞',
         rarity: '⭐⭐⭐',
         element: '金',
@@ -53,7 +71,7 @@ export const specialShenshaData: ShenshaRecord[] = [
         type: 'special',
         lookupMethod: '申子辰见子，亥卯未见卯，寅午戌见午，巳酉丑见酉',
         meaning: '权力之星，具有组织领导才能，有慑众之威',
-        gameEffect: '指挥型，指挥其他神煞协战',
+        gameEffect: '【万军统领】指挥型，指挥其他神煞协战',
         detailedLookup: {
             method: '按三合局查旺位',
             conditions: [
@@ -65,6 +83,12 @@ export const specialShenshaData: ShenshaRecord[] = [
     {
         id: 'kuigang',
         name: '魁罡',
+        personalName: '魁罡',
+        title: '霸道剑仙',
+        fullName: '魁罡·霸道剑仙',
+        personality: '霸道无双，一剑破万法，刚直不阿',
+        catchphrase: '一剑在手，天下我有！',
+        biography: '剑道天才，一剑可开天。手持霸王剑，剑气纵横九万里，能以剑意破除一切防御和阻碍。',
         category: '特殊神煞',
         rarity: '⭐⭐⭐',
         element: '金',
@@ -72,7 +96,7 @@ export const specialShenshaData: ShenshaRecord[] = [
         type: 'special',
         lookupMethod: '庚戌、庚辰、戊戌、壬辰四日柱',
         meaning: '刚烈正直勇猛，耿直胸无城府，嫉恶如仇聪明果断',
-        gameEffect: '霸道型，无视部分防御',
+        gameEffect: '【霸王剑气】霸道型，无视部分防御',
         detailedLookup: {
             method: '特定日柱',
             conditions: [
@@ -83,6 +107,12 @@ export const specialShenshaData: ShenshaRecord[] = [
     {
         id: 'tianya',
         name: '天涯',
+        personalName: '天涯',
+        title: '漂泊浪人',
+        fullName: '天涯·漂泊浪人',
+        personality: '孤独飘零，居无定所，浪迹天涯',
+        catchphrase: '天涯海角，何处是家？',
+        biography: '四海漂泊的孤独剑客。背负血海深仇，流浪天涯海角，居无定所，只有手中长剑为伴。',
         category: '特殊神煞',
         rarity: '⭐',
         element: '水',
@@ -90,7 +120,7 @@ export const specialShenshaData: ShenshaRecord[] = [
         type: 'special',
         lookupMethod: '寅午戌见亥，申子辰见巳，巳酉丑见寅，亥卯未见申',
         meaning: '远行他乡，漂泊不定，居无定所',
-        gameEffect: '漂泊型，随机改变位置',
+        gameEffect: '【浪迹天涯】漂泊型，随机改变位置',
         detailedLookup: {
             method: '按三合局查天涯位',
             conditions: [
@@ -102,6 +132,12 @@ export const specialShenshaData: ShenshaRecord[] = [
     {
         id: 'diwan',
         name: '地网',
+        personalName: '地网',
+        title: '束缚法师',
+        fullName: '地网·束缚法师',
+        personality: '擅长控制，法网恢恢，束缚万物',
+        catchphrase: '法网一张，万物难逃！',
+        biography: '精通束缚法术的神秘法师。手持地网法器，能布下天罗地网，让敌人插翅难飞。',
         category: '特殊神煞',
         rarity: '⭐⭐',
         element: '土',
@@ -109,7 +145,7 @@ export const specialShenshaData: ShenshaRecord[] = [
         type: 'special',
         lookupMethod: '见辰戌为地网，天罗地网难逃',
         meaning: '约束限制，难以发挥，被困束缚',
-        gameEffect: '束缚型，限制行动能力',
+        gameEffect: '【地网束缚】束缚型，限制行动能力',
         detailedLookup: {
             method: '固定地支',
             conditions: [

@@ -7,7 +7,13 @@
  */
 export interface LZoreCard {
     id: string;
-    name: string;
+    name: string;                          // 原神煞名称（保持兼容性）
+    personalName?: string;                 // 个人名字
+    title?: string;                        // 神煞称号
+    fullName?: string;                     // 完整名字 "personalName·title"
+    personality?: string;                  // 性格特点
+    catchphrase?: string;                  // 口头禅
+    biography?: string;                    // 个人简介
     type: 'auspicious' | 'inauspicious' | 'special';
     element: 'metal' | 'wood' | 'water' | 'fire' | 'earth' | 'special';
     power: number;

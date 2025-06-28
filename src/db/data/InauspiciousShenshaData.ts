@@ -8,6 +8,12 @@ export const inauspiciousShenshaData: ShenshaRecord[] = [
     {
         id: 'yangren',
         name: '羊刃',
+        personalName: '血刃',
+        title: '狂战魔王',
+        fullName: '血刃·狂战魔王',
+        personality: '嗜血好战，狂暴无双，伤敌伤己',
+        catchphrase: '血刃所指，万物皆斩！',
+        biography: '上古战神堕落而成，手持血色巨刃。曾是天庭战神，因嗜血成性被贬下界，但战斗力依然恐怖至极。',
         category: '凶星凶神',
         rarity: '⭐⭐⭐',
         element: '火',
@@ -15,7 +21,7 @@ export const inauspiciousShenshaData: ShenshaRecord[] = [
         type: 'inauspicious',
         lookupMethod: '甲刃卯，乙刃寅，丙戊刃午，丁己刃巳，庚刃酉，辛刃申，壬刃子，癸刃亥',
         meaning: '刚烈冲动，易惹是非，吉则勇猛，凶则血光刑伤',
-        gameEffect: '狂暴攻击，高威力但有反噬',
+        gameEffect: '【血刃狂斩】狂暴攻击，高威力但有反噬',
         detailedLookup: {
             method: '按日干查刃位',
             conditions: [
@@ -27,6 +33,12 @@ export const inauspiciousShenshaData: ShenshaRecord[] = [
     {
         id: 'jiesha',
         name: '劫煞',
+        personalName: '劫煞',
+        title: '夺命盗圣',
+        fullName: '劫煞·夺命盗圣',
+        personality: '来去如风，劫财夺宝，破坏专家',
+        catchphrase: '取之有道，劫之有术！',
+        biography: '江湖第一大盗，专劫富济己。身着夜行衣，轻功绝顶，能无声无息地夺取他人财物和力量。',
         category: '凶星凶神',
         rarity: '⭐⭐',
         element: '火',
@@ -34,7 +46,7 @@ export const inauspiciousShenshaData: ShenshaRecord[] = [
         type: 'inauspicious',
         lookupMethod: '申子辰见巳，亥卯未见申，寅午戌见亥，巳酉丑见寅',
         meaning: '一生多是非破财，破财小人意外灾祸',
-        gameEffect: '劫夺型，破坏对方资源',
+        gameEffect: '【劫财夺宝】劫夺型，破坏对方资源',
         detailedLookup: {
             method: '按三合局查劫位',
             conditions: [
@@ -46,6 +58,12 @@ export const inauspiciousShenshaData: ShenshaRecord[] = [
     {
         id: 'wangshen',
         name: '亡神',
+        personalName: '亡灵',
+        title: '死神使者',
+        fullName: '亡灵·死神使者',
+        personality: '阴冷无情，补刀专家，落井下石',
+        catchphrase: '死神降临，收割开始。',
+        biography: '冥界使者，专收残魂败魄。身披黑色斗篷，手持死神镰刀，专门收割那些已经受伤的灵魂。',
         category: '凶星凶神',
         rarity: '⭐⭐⭐',
         element: '水',
@@ -53,7 +71,7 @@ export const inauspiciousShenshaData: ShenshaRecord[] = [
         type: 'inauspicious',
         lookupMethod: '申子辰见亥，亥卯未见寅，寅午戌见巳，巳酉丑见申',
         meaning: '自内失之为亡，容易招惹是非官讼',
-        gameEffect: '死神型，对已受损目标威力翻倍',
+        gameEffect: '【死神收割】死神型，对已受损目标威力翻倍',
         detailedLookup: {
             method: '按三合局查亡位',
             conditions: [
@@ -65,6 +83,12 @@ export const inauspiciousShenshaData: ShenshaRecord[] = [
     {
         id: 'xianchi',
         name: '咸池',
+        personalName: '咸池',
+        title: '魅惑妖姬',
+        fullName: '咸池·魅惑妖姬',
+        personality: '妖媚动人，迷惑人心，乱人心智',
+        catchphrase: '红颜如毒，君心如醉～',
+        biography: '九尾狐族后裔，美貌倾国倾城。精通魅惑之术，能乱人心智，让强者沉溺于美色而忘记正事。',
         category: '凶星凶神',
         rarity: '⭐',
         element: '水',
@@ -72,7 +96,7 @@ export const inauspiciousShenshaData: ShenshaRecord[] = [
         type: 'inauspicious',
         lookupMethod: '申子辰酉，亥卯未子，寅午戌卯，巳酉丑午',
         meaning: '风流酒色，长相漂亮性格风流，与异性纠缠不清',
-        gameEffect: '迷惑型，影响对方决策',
+        gameEffect: '【魅惑心神】迷惑型，影响对方决策',
         detailedLookup: {
             method: '按三合局查桃花',
             conditions: [
@@ -84,6 +108,12 @@ export const inauspiciousShenshaData: ShenshaRecord[] = [
     {
         id: 'kongwang',
         name: '空亡',
+        personalName: '虚无',
+        title: '空亡道人',
+        fullName: '虚无·空亡道人',
+        personality: '飘渺虚幻，化有为无，力量落空',
+        catchphrase: '万法皆空，一切如梦。',
+        biography: '修炼虚无大道的神秘道士。身形虚幻，若有若无，能让一切攻击落空，化实为虚。',
         category: '凶星凶神',
         rarity: '⭐⭐',
         element: '特殊',
@@ -91,7 +121,7 @@ export const inauspiciousShenshaData: ShenshaRecord[] = [
         type: 'inauspicious',
         lookupMethod: '按日柱所在旬，甲子旬戌亥空，甲戌旬申酉空等',
         meaning: '象征力量落空，吉神减力凶煞化解',
-        gameEffect: '虚化型，使目标暂时失效',
+        gameEffect: '【虚无缥缈】虚化型，使目标暂时失效',
         detailedLookup: {
             method: '按旬空查法',
             conditions: [
@@ -103,6 +133,12 @@ export const inauspiciousShenshaData: ShenshaRecord[] = [
     {
         id: 'baihu',
         name: '白虎',
+        personalName: '白虎',
+        title: '杀星将军',
+        fullName: '白虎·杀星将军',
+        personality: '凶猛残暴，血光四溅，见血封喉',
+        catchphrase: '虎啸山林，血洗天下！',
+        biography: '西方白虎星君，掌管杀戮征战。化身白色巨虎，利爪如刀，一击必见血，是战场上的恐怖存在。',
         category: '凶星凶神',
         rarity: '⭐⭐⭐',
         element: '金',
@@ -110,7 +146,7 @@ export const inauspiciousShenshaData: ShenshaRecord[] = [
         type: 'inauspicious',
         lookupMethod: '申子辰见申，亥卯未见亥，寅午戌见寅，巳酉丑见巳',
         meaning: '主血光刑伤，意外灾祸，手术开刀',
-        gameEffect: '杀伤型，造成流血伤害',
+        gameEffect: '【白虎杀戮】杀伤型，造成流血伤害',
         detailedLookup: {
             method: '按三合局查白虎位',
             conditions: [
