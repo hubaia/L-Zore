@@ -5,12 +5,12 @@
 export interface ShenshaRecord {
     id: string;
     name: string;                          // 原神煞名称
-    personalName?: string;                 // 个人名字
-    title?: string;                        // 神煞称号
-    fullName?: string;                     // 完整名字 "personalName·title"
-    personality?: string;                  // 性格特点
-    catchphrase?: string;                  // 口头禅
-    biography?: string;                    // 个人简介
+    callsign?: string;                     // 呼号代码
+    classification?: string;               // 分类等级
+    designation?: string;                  // 完整指定代号 "callsign·classification"
+    psyProfile?: string;                   // 心理档案
+    motto?: string;                        // 作战座右铭
+    dossier?: string;                      // 数据档案
     category: '吉星吉神' | '凶星凶神' | '特殊神煞';
     rarity: '⭐' | '⭐⭐' | '⭐⭐⭐';
     element: '火' | '水' | '木' | '金' | '土' | '特殊';
