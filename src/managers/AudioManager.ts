@@ -83,7 +83,13 @@ export class AudioManager {
             this.audioSource = this.audioContext.createBufferSource();
             this.audioSource.buffer = this.audioBuffer;
             this.audioSource.loop = true;
-            this.audioSource.connect(this.audioContext.destination);
+            
+            // 创建音量控制节点，降低背景音乐音量
+            const gainNode = this.audioContext.createGain();
+            gainNode.gain.value = 0.25; // 降低到25%音量，为语音台词留出空间，确保入场台词清晰可听
+            
+            this.audioSource.connect(gainNode);
+            gainNode.connect(this.audioContext.destination);
             
             // 设置结束回调
             this.audioSource.onended = () => {

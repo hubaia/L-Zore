@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎤 L-Zore语音交互系统演示</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .header p {
+            font-size: 1.2em;
+            color: #7f8c8d;
+        }
+        
+        .demo-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        @media (max-width: 768px) {
+            .demo-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .panel {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .panel h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .status-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .status-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .status-label {
+            font-weight: 500;
+            color: #495057;
+        }
+        
+        .status-value {
+            font-weight: bold;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+        
+        .status-supported { background: #d4edda; color: #155724; }
+        .status-not-supported { background: #f8d7da; color: #721c24; }
+        .status-enabled { background: #cce5ff; color: #004085; }
+        .status-disabled { background: #fff3cd; color: #856404; }
+        .status-listening { background: #d1ecf1; color: #0c5460; }
+        .status-idle { background: #e2e3e5; color: #383d41; }
+        
+        .control-section {
+            margin-bottom: 25px;
+        }
+        
+        .control-section h3 {
+            color: #495057;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+        
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+        
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+        }
+        
+        .btn-danger:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(255, 107, 107, 0.3);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #00d2ff, #3a7bd5);
+            color: white;
+        }
+        
+        .btn-success:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 210, 255, 0.3);
+        }
+        
+        .btn-outline {
+            background: transparent;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+        
+        .btn-outline:hover:not(:disabled) {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        .current-result {
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+            border-left: 4px solid #2196f3;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .current-result h3 {
+            margin: 0 0 10px 0;
+            color: #1976d2;
+        }
+        
+        .result-text {
+            font-size: 16px;
+            font-weight: 500;
+            color: #333;
+            word-wrap: break-word;
+        }
+        
+        .commands-grid {
+            display: grid;
+            gap: 15px;
+        }
+        
+        .command-category {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        
+        .command-category h4 {
+            color: #495057;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+            border-bottom: 2px solid #dee2e6;
+            padding-bottom: 8px;
+        }
+        
+        .command-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 12px;
+        }
+        
+        .command-item {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 15px;
+            transition: all 0.2s;
+        }
+        
+        .command-item:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transform: translateY(-1px);
+        }
+        
+        .command-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .command-name {
+            font-weight: 600;
+            color: #495057;
+        }
+        
+        .btn-test {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-test:hover {
+            background: #218838;
+            transform: scale(1.05);
+        }
+        
+        .command-description {
+            color: #6c757d;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+        
+        .command-keywords {
+            font-size: 12px;
+            color: #868e96;
+            font-style: italic;
+        }
+        
+        .results-list {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+        
+        .empty-state {
+            text-align: center;
+            color: #6c757d;
+            padding: 40px;
+            font-style: italic;
+        }
+        
+        .result-item {
+            border-bottom: 1px solid #dee2e6;
+            padding: 15px;
+            background: white;
+            margin: 8px;
+            border-radius: 6px;
+        }
+        
+        .result-item:last-child {
+            border-bottom: none;
+        }
+        
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 12px;
+            color: #6c757d;
+        }
+        
+        .result-confidence {
+            font-weight: 500;
+            padding: 2px 6px;
+            border-radius: 3px;
+            background: #e9ecef;
+        }
+        
+        .result-content {
+            font-size: 14px;
+        }
+        
+        .command-result {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 8px 12px;
+            border-radius: 4px;
+        }
+        
+        .speech-result {
+            background: #cce5ff;
+            border-left: 4px solid #007bff;
+            padding: 8px 12px;
+            border-radius: 4px;
+        }
+        
+        .result-label {
+            font-weight: 600;
+            margin-right: 8px;
+        }
+        
+        .result-content-text {
+            color: #495057;
+        }
+        
+        .log-panel {
+            background: #000;
+            color: #00ff00;
+            border-radius: 8px;
+            padding: 15px;
+            height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            margin-top: 20px;
+        }
+        
+        .log-entry {
+            margin: 2px 0;
+            padding: 2px 0;
+        }
+        
+        .log-success { color: #00ff88; }
+        .log-error { color: #ff4444; }
+        .log-warning { color: #ffaa00; }
+        .log-info { color: #00aaff; }
+        .log-game { color: #ff8800; }
+        
+        .listening-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ff4444;
+            margin-left: 8px;
+            animation: pulse 1.5s infinite;
+        }
+        
+        .listening-indicator.active {
+            background: #00ff88;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.1); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        
+        .demo-note {
+            background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+            border-left: 4px solid #ff9800;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .demo-note h3 {
+            color: #e65100;
+            margin-bottom: 8px;
+        }
+        
+        .demo-note p {
+            color: #bf360c;
+            line-height: 1.5;
+        }
+        
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .feature-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+            position: relative;
+            padding-left: 25px;
+        }
+        
+        .feature-list li:before {
+            content: '🎤';
+            position: absolute;
+            left: 0;
+            top: 8px;
+        }
+        
+        .performance-metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .metric-item {
+            text-align: center;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        
+        .metric-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+            display: block;
+        }
+        
+        .metric-label {
+            font-size: 12px;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 头部 -->
+        <div class="header">
+            <h1>🎤 L-Zore语音交互系统演示</h1>
+            <p>语音识别 + 语音合成 + PocketSphinx.js 完整交互体验</p>
+        </div>
+        
+        <!-- 使用说明 -->
+        <div class="demo-note">
+            <h3>🎯 使用说明</h3>
+            <p>
+                1. 点击"开始语音识别"按钮开启语音控制<br>
+                2. 说出下方的语音命令来控制游戏<br>
+                3. 系统会自动识别并执行相应操作<br>
+                4. 支持神煞名称识别和游戏操作命令
+            </p>
+        </div>
+        
+        <!-- 主要功能面板 -->
+        <div class="demo-grid">
+            <!-- 系统状态面板 -->
+            <div class="panel">
+                <h2>📊 系统状态</h2>
+                <div class="status-grid">
+                    <div class="status-item">
+                        <span class="status-label">识别支持:</span>
+                        <span id="recognitionSupport" class="status-value status-not-supported">检查中...</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">识别状态:</span>
+                        <span id="recognitionStatus" class="status-value status-disabled">未启用</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">监听状态:</span>
+                        <span id="listeningStatus" class="status-value status-idle">
+                            待机 <span class="listening-indicator" id="listeningIndicator"></span>
+                        </span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">注册命令:</span>
+                        <span id="commandCount" class="status-value">0 个</span>
+                    </div>
+                </div>
+                
+                <!-- 性能指标 -->
+                <div class="performance-metrics">
+                    <div class="metric-item">
+                        <span id="recognitionAccuracy" class="metric-value">0%</span>
+                        <div class="metric-label">识别准确率</div>
+                    </div>
+                    <div class="metric-item">
+                        <span id="commandExecuted" class="metric-value">0</span>
+                        <div class="metric-label">执行命令数</div>
+                    </div>
+                    <div class="metric-item">
+                        <span id="averageConfidence" class="metric-value">0%</span>
+                        <div class="metric-label">平均置信度</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 控制面板 -->
+            <div class="panel">
+                <h2>🎛️ 控制面板</h2>
+                
+                <div class="control-section">
+                    <h3>基础控制</h3>
+                    <div class="button-group">
+                        <button id="toggleRecognition" class="btn btn-primary" disabled>
+                            🎤 开始识别
+                        </button>
+                        <button id="testSpeech" class="btn btn-success">
+                            🔊 测试语音合成
+                        </button>
+                        <button id="clearResults" class="btn btn-outline">
+                            🗑️ 清空结果
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="control-section">
+                    <h3>功能测试</h3>
+                    <div class="button-group">
+                        <button id="testShenshaRecognition" class="btn btn-success">
+                            🎴 测试神煞识别
+                        </button>
+                        <button id="testGameCommands" class="btn btn-success">
+                            🎮 测试游戏命令
+                        </button>
+                        <button id="testVoiceInteraction" class="btn btn-success">
+                            💬 测试语音交互
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 当前识别结果 -->
+                <div id="currentResultPanel" class="current-result" style="display: none;">
+                    <h3>🗣️ 当前识别:</h3>
+                    <div id="currentResultText" class="result-text"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 语音命令面板 -->
+        <div class="panel">
+            <h2>📋 语音命令列表</h2>
+            <div id="commandsContainer" class="commands-grid">
+                <!-- 命令将在这里动态生成 -->
+            </div>
+        </div>
+        
+        <!-- 识别结果面板 -->
+        <div class="panel">
+            <h2>🎯 识别结果历史</h2>
+            <div id="resultsList" class="results-list">
+                <div class="empty-state">
+                    暂无识别结果，请开始语音识别...
+                </div>
+            </div>
+        </div>
+        
+        <!-- 系统日志 -->
+        <div class="panel">
+            <h2>📋 系统日志</h2>
+            <div id="logPanel" class="log-panel"></div>
+        </div>
+        
+        <!-- 功能特性 -->
+        <div class="panel">
+            <h2>✨ 功能特性</h2>
+            <ul class="feature-list">
+                <li>支持Web Speech API和PocketSphinx.js双引擎</li>
+                <li>智能语音命令识别和执行</li>
+                <li>神煞名称多变体识别</li>
+                <li>实时语音反馈和确认</li>
+                <li>连续语音识别和命令队列</li>
+                <li>自适应置信度调整</li>
+                <li>多语言支持（中文优先）</li>
+                <li>游戏操作语音控制</li>
+                <li>战斗指令语音识别</li>
+                <li>错误处理和自动恢复</li>
+                <li>实时性能监控</li>
+                <li>可扩展的命令系统</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        let recognitionManager = null;
+        let speechManager = null;
+        let isRecognitionSupported = false;
+        let isRecognitionEnabled = false;
+        let isListening = false;
+        let recognitionResults = [];
+        let commandsExecuted = 0;
+        let totalConfidence = 0;
+        let resultCount = 0;
+        
+        // 模拟Phaser场景
+        const mockScene = {
+            events: {
+                emit: function(event, data) {
+                    logMessage(`游戏事件: ${event}`, 'game');
+                    if (data) {
+                        logMessage(`事件数据: ${JSON.stringify(data)}`, 'game');
+                    }
+                }
+            }
+        };
+        
+        // 简化的语音合成管理器
+        class SimpleSpeechManager {
+            constructor() {
+                this.isSupported = 'speechSynthesis' in window;
+                this.isEnabled = true;
+            }
+            
+            speak(text, type = 'system') {
+                if (!this.isSupported || !this.isEnabled) return;
+                
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'zh-CN';
+                utterance.rate = 0.9;
+                utterance.pitch = 1.0;
+                utterance.volume = 1.0;
+                
+                speechSynthesis.speak(utterance);
+                logMessage(`语音播放: ${text}`, 'info');
+            }
+        }
+        
+        // 简化的语音识别管理器
+        class SimpleRecognitionManager {
+            constructor(events = {}) {
+                this.events = events;
+                this.recognition = null;
+                this.isSupported = false;
+                this.isEnabled = false;
+                this.isListening = false;
+                this.commands = new Map();
+                this.shenshaNames = new Map();
+                
+                this.init();
+                this.setupCommands();
+                this.setupShenshaNames();
+            }
+            
+            init() {
+                const SpeechRecognition = window.webkitSpeechRecognition || window.SpeechRecognition;
+                
+                if (SpeechRecognition && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                    this.isSupported = true;
+                    this.recognition = new SpeechRecognition();
+                    
+                    this.recognition.lang = 'zh-CN';
+                    this.recognition.continuous = true;
+                    this.recognition.interimResults = true;
+                    this.recognition.maxAlternatives = 3;
+                    
+                    this.setupEvents();
+                }
+            }
+            
+            setupEvents() {
+                this.recognition.onstart = () => {
+                    this.isListening = true;
+                    if (this.events.onSpeechStart) this.events.onSpeechStart();
+                };
+                
+                this.recognition.onend = () => {
+                    this.isListening = false;
+                    if (this.events.onSpeechEnd) this.events.onSpeechEnd();
+                    
+                    // 自动重启
+                    if (this.isEnabled) {
+                        setTimeout(() => this.startListening(), 100);
+                    }
+                };
+                
+                this.recognition.onresult = (event) => {
+                    const results = event.results;
+                    const lastResult = results[results.length - 1];
+                    
+                    if (lastResult.isFinal) {
+                        const transcript = lastResult[0].transcript.trim();
+                        const confidence = lastResult[0].confidence;
+                        
+                        if (this.events.onResult) {
+                            this.events.onResult(transcript, confidence);
+                        }
+                        
+                        this.processCommand(transcript, confidence);
+                    }
+                };
+                
+                this.recognition.onerror = (event) => {
+                    if (this.events.onError) this.events.onError(event.error);
+                };
+            }
+            
+            setupCommands() {
+                this.commands.set('place_card', {
+                    command: '放置卡牌',
+                    keywords: ['放置', '出牌', '下牌', '使用'],
+                    description: '放置选中的卡牌',
+                    category: 'game',
+                    action: () => mockScene.events.emit('voice-command', 'place_card')
+                });
+                
+                this.commands.set('end_turn', {
+                    command: '结束回合',
+                    keywords: ['结束', '回合结束', '下一回合'],
+                    description: '结束当前回合',
+                    category: 'game',
+                    action: () => mockScene.events.emit('voice-command', 'end_turn')
+                });
+                
+                this.commands.set('attack', {
+                    command: '攻击',
+                    keywords: ['攻击', '进攻', '战斗'],
+                    description: '发起攻击',
+                    category: 'battle',
+                    action: () => mockScene.events.emit('voice-command', 'attack')
+                });
+                
+                this.commands.set('pause_game', {
+                    command: '暂停游戏',
+                    keywords: ['暂停', '停止', '等等'],
+                    description: '暂停游戏',
+                    category: 'system',
+                    action: () => mockScene.events.emit('voice-command', 'pause')
+                });
+            }
+            
+            setupShenshaNames() {
+                this.shenshaNames.set('tianyiguiren', ['天乙贵人', '贵人', '天乙']);
+                this.shenshaNames.set('yangren', ['羊刃', '刃星', '飞刃']);
+                this.shenshaNames.set('wenchang', ['文昌', '文昌贵人', '文星']);
+                this.shenshaNames.set('yima', ['驿马', '马星', '奔马']);
+            }
+            
+            processCommand(transcript, confidence) {
+                const normalized = transcript.toLowerCase().replace(/[，。！？\s]/g, '');
+                
+                // 检查命令
+                for (const [id, command] of this.commands) {
+                    if (this.matchCommand(normalized, command)) {
+                        if (this.events.onCommandRecognized) {
+                            this.events.onCommandRecognized(command.command, confidence);
+                        }
+                        command.action();
+                        return;
+                    }
+                }
+                
+                // 检查神煞
+                const shenshaMatch = this.matchShensha(normalized);
+                if (shenshaMatch) {
+                    mockScene.events.emit('voice-shensha-select', shenshaMatch);
+                    return;
+                }
+            }
+            
+            matchCommand(text, command) {
+                for (const keyword of command.keywords) {
+                    if (text.includes(keyword)) return true;
+                }
+                return false;
+            }
+            
+            matchShensha(text) {
+                for (const [id, variants] of this.shenshaNames) {
+                    for (const variant of variants) {
+                        if (text.includes(variant)) return id;
+                    }
+                }
+                return null;
+            }
+            
+            async startListening() {
+                if (!this.isSupported || this.isListening) return;
+                
+                try {
+                    await navigator.mediaDevices.getUserMedia({ audio: true });
+                    this.isEnabled = true;
+                    this.recognition.start();
+                } catch (error) {
+                    if (this.events.onError) this.events.onError(error);
+                }
+            }
+            
+            stopListening() {
+                this.isEnabled = false;
+                if (this.recognition && this.isListening) {
+                    this.recognition.stop();
+                }
+            }
+            
+            getCommands() {
+                return Array.from(this.commands.values());
+            }
+            
+            getStatus() {
+                return {
+                    isSupported: this.isSupported,
+                    isEnabled: this.isEnabled,
+                    isListening: this.isListening,
+                    commandCount: this.commands.size
+                };
+            }
+        }
+        
+        // 初始化系统
+        function initializeSystem() {
+            logMessage('初始化语音交互系统...', 'info');
+            
+            // 初始化语音合成
+            speechManager = new SimpleSpeechManager();
+            
+            // 初始化语音识别
+            recognitionManager = new SimpleRecognitionManager({
+                onCommandRecognized: (command, confidence) => {
+                    addRecognitionResult('', confidence, command);
+                    commandsExecuted++;
+                    updateMetrics();
+                    speechManager.speak(`执行命令：${command}`);
+                },
+                onResult: (result, confidence) => {
+                    updateCurrentResult(result);
+                    addRecognitionResult(result, confidence);
+                    updateMetrics();
+                },
+                onSpeechStart: () => {
+                    isListening = true;
+                    updateStatus();
+                    logMessage('开始语音识别', 'info');
+                },
+                onSpeechEnd: () => {
+                    isListening = false;
+                    updateStatus();
+                    logMessage('语音识别结束', 'info');
+                },
+                onError: (error) => {
+                    logMessage(`识别错误: ${error}`, 'error');
+                }
+            });
+            
+            const status = recognitionManager.getStatus();
+            isRecognitionSupported = status.isSupported;
+            
+            updateStatus();
+            updateCommands();
+            
+            logMessage('语音交互系统初始化完成', 'success');
+        }
+        
+        // 更新状态显示
+        function updateStatus() {
+            document.getElementById('recognitionSupport').textContent = isRecognitionSupported ? '✅ 支持' : '❌ 不支持';
+            document.getElementById('recognitionSupport').className = `status-value ${isRecognitionSupported ? 'status-supported' : 'status-not-supported'}`;
+            
+            document.getElementById('recognitionStatus').textContent = isRecognitionEnabled ? '🟢 启用' : '🔴 停用';
+            document.getElementById('recognitionStatus').className = `status-value ${isRecognitionEnabled ? 'status-enabled' : 'status-disabled'}`;
+            
+            document.getElementById('listeningStatus').innerHTML = isListening ? 
+                '监听中 <span class="listening-indicator active"></span>' : 
+                '待机 <span class="listening-indicator"></span>';
+            document.getElementById('listeningStatus').className = `status-value ${isListening ? 'status-listening' : 'status-idle'}`;
+            
+            const commandCount = recognitionManager ? recognitionManager.getStatus().commandCount : 0;
+            document.getElementById('commandCount').textContent = `${commandCount} 个`;
+            
+            const toggleBtn = document.getElementById('toggleRecognition');
+            toggleBtn.disabled = !isRecognitionSupported;
+            toggleBtn.textContent = isRecognitionEnabled ? '🛑 停止识别' : '🎤 开始识别';
+            toggleBtn.className = `btn ${isRecognitionEnabled ? 'btn-danger' : 'btn-primary'}`;
+        }
+        
+        // 更新性能指标
+        function updateMetrics() {
+            const accuracy = resultCount > 0 ? Math.round((commandsExecuted / resultCount) * 100) : 0;
+            const avgConfidence = resultCount > 0 ? Math.round((totalConfidence / resultCount) * 100) : 0;
+            
+            document.getElementById('recognitionAccuracy').textContent = `${accuracy}%`;
+            document.getElementById('commandExecuted').textContent = commandsExecuted;
+            document.getElementById('averageConfidence').textContent = `${avgConfidence}%`;
+        }
+        
+        // 更新当前识别结果
+        function updateCurrentResult(text) {
+            const panel = document.getElementById('currentResultPanel');
+            const textElement = document.getElementById('currentResultText');
+            
+            if (text) {
+                textElement.textContent = text;
+                panel.style.display = 'block';
+            } else {
+                panel.style.display = 'none';
+            }
+        }
+        
+        // 添加识别结果
+        function addRecognitionResult(text, confidence, command = null) {
+            const result = {
+                text,
+                confidence,
+                command,
+                timestamp: Date.now()
+            };
+            
+            recognitionResults.unshift(result);
+            if (recognitionResults.length > 20) {
+                recognitionResults.pop();
+            }
+            
+            totalConfidence += confidence;
+            resultCount++;
+            
+            updateResultsList();
+        }
+        
+        // 更新结果列表
+        function updateResultsList() {
+            const container = document.getElementById('resultsList');
+            
+            if (recognitionResults.length === 0) {
+                container.innerHTML = '<div class="empty-state">暂无识别结果，请开始语音识别...</div>';
+                return;
+            }
+            
+            const html = recognitionResults.map(result => {
+                const time = new Date(result.timestamp).toLocaleTimeString();
+                const confidencePercent = Math.round(result.confidence * 100);
+                
+                if (result.command) {
+                    return `
+                        <div class="result-item">
+                            <div class="result-header">
+                                <span>${time}</span>
+                                <span class="result-confidence">置信度: ${confidencePercent}%</span>
+                            </div>
+                            <div class="result-content">
+                                <div class="command-result">
+                                    <span class="result-label">命令:</span>
+                                    <span class="result-content-text">${result.command}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    return `
+                        <div class="result-item">
+                            <div class="result-header">
+                                <span>${time}</span>
+                                <span class="result-confidence">置信度: ${confidencePercent}%</span>
+                            </div>
+                            <div class="result-content">
+                                <div class="speech-result">
+                                    <span class="result-label">语音:</span>
+                                    <span class="result-content-text">${result.text}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            }).join('');
+            
+            container.innerHTML = html;
+        }
+        
+        // 更新命令列表
+        function updateCommands() {
+            if (!recognitionManager) return;
+            
+            const commands = recognitionManager.getCommands();
+            const container = document.getElementById('commandsContainer');
+            
+            const categories = {
+                'game': '🎮 游戏命令',
+                'battle': '⚔️ 战斗命令',
+                'system': '🖥️ 系统命令',
+                'voice': '🎤 语音命令'
+            };
+            
+            const html = Object.entries(categories).map(([category, title]) => {
+                const categoryCommands = commands.filter(cmd => cmd.category === category);
+                if (categoryCommands.length === 0) return '';
+                
+                const commandsHtml = categoryCommands.map(command => `
+                    <div class="command-item">
+                        <div class="command-header">
+                            <span class="command-name">${command.command}</span>
+                            <button class="btn-test" onclick="testCommand('${command.command}')">测试</button>
+                        </div>
+                        <div class="command-description">${command.description}</div>
+                        <div class="command-keywords">关键词: ${command.keywords.join(', ')}</div>
+                    </div>
+                `).join('');
+                
+                return `
+                    <div class="command-category">
+                        <h4>${title}</h4>
+                        <div class="command-list">
+                            ${commandsHtml}
+                        </div>
+                    </div>
+                `;
+            }).filter(html => html).join('');
+            
+            container.innerHTML = html;
+        }
+        
+        // 测试命令
+        function testCommand(commandName) {
+            logMessage(`测试命令: ${commandName}`, 'info');
+            speechManager.speak(`正在测试命令：${commandName}`);
+            
+            setTimeout(() => {
+                addRecognitionResult('', 0.95, commandName);
+                commandsExecuted++;
+                updateMetrics();
+            }, 1000);
+        }
+        
+        // 日志函数
+        function logMessage(message, type = 'info') {
+            const logPanel = document.getElementById('logPanel');
+            const timestamp = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = `[${timestamp}] ${message}`;
+            
+            logPanel.insertBefore(entry, logPanel.firstChild);
+            
+            // 限制日志数量
+            while (logPanel.children.length > 100) {
+                logPanel.removeChild(logPanel.lastChild);
+            }
+        }
+        
+        // 事件绑定
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeSystem();
+            
+            // 切换识别按钮
+            document.getElementById('toggleRecognition').addEventListener('click', async function() {
+                if (isRecognitionEnabled) {
+                    recognitionManager.stopListening();
+                    isRecognitionEnabled = false;
+                    logMessage('语音识别已停止', 'warning');
+                } else {
+                    await recognitionManager.startListening();
+                    isRecognitionEnabled = true;
+                    logMessage('语音识别已启动', 'success');
+                }
+                updateStatus();
+            });
+            
+            // 测试语音合成
+            document.getElementById('testSpeech').addEventListener('click', function() {
+                speechManager.speak('这是L-Zore语音合成系统测试，系统工作正常');
+                logMessage('测试语音合成', 'info');
+            });
+            
+            // 清空结果
+            document.getElementById('clearResults').addEventListener('click', function() {
+                recognitionResults = [];
+                commandsExecuted = 0;
+                totalConfidence = 0;
+                resultCount = 0;
+                updateCurrentResult('');
+                updateResultsList();
+                updateMetrics();
+                logMessage('已清空识别结果', 'info');
+            });
+            
+            // 测试神煞识别
+            document.getElementById('testShenshaRecognition').addEventListener('click', function() {
+                const testShensha = ['天乙贵人', '羊刃', '文昌', '驿马'];
+                const randomShensha = testShensha[Math.floor(Math.random() * testShensha.length)];
+                
+                logMessage(`模拟识别神煞: ${randomShensha}`, 'info');
+                speechManager.speak(`模拟语音输入：${randomShensha}`);
+                
+                setTimeout(() => {
+                    addRecognitionResult(randomShensha, 0.95, `选择神煞: ${randomShensha}`);
+                    commandsExecuted++;
+                    updateMetrics();
+                }, 2000);
+            });
+            
+            // 测试游戏命令
+            document.getElementById('testGameCommands').addEventListener('click', function() {
+                const testCommands = ['放置卡牌', '结束回合', '攻击', '暂停游戏'];
+                const randomCommand = testCommands[Math.floor(Math.random() * testCommands.length)];
+                
+                logMessage(`模拟游戏命令: ${randomCommand}`, 'info');
+                speechManager.speak(`模拟语音命令：${randomCommand}`);
+                
+                setTimeout(() => {
+                    addRecognitionResult(randomCommand, 0.90, randomCommand);
+                    commandsExecuted++;
+                    updateMetrics();
+                }, 2000);
+            });
+            
+            // 测试语音交互
+            document.getElementById('testVoiceInteraction').addEventListener('click', function() {
+                logMessage('开始语音交互测试序列', 'info');
+                speechManager.speak('开始语音交互测试，请依次说出：天乙贵人、放置卡牌、攻击');
+                
+                const testSequence = [
+                    { text: '天乙贵人', command: '选择神煞: 天乙贵人', delay: 3000 },
+                    { text: '放置卡牌', command: '放置卡牌', delay: 6000 },
+                    { text: '攻击', command: '攻击', delay: 9000 }
+                ];
+                
+                testSequence.forEach(test => {
+                    setTimeout(() => {
+                        addRecognitionResult(test.text, 0.88, test.command);
+                        commandsExecuted++;
+                        updateMetrics();
+                    }, test.delay);
+                });
+            });
+        });
+    </script>
+</body>
+</html> 

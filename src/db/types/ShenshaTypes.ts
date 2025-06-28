@@ -11,6 +11,12 @@ export interface ShenshaRecord {
     psyProfile?: string;                   // 心理档案
     motto?: string;                        // 作战座右铭
     dossier?: string;                      // 数据档案
+    // 克苏鲁系扩展
+    elderSign?: string;                    // 古老印记
+    madnessLevel?: number;                 // 疯狂等级 (0-10)
+    sanityDamage?: number;                 // 理智损伤值
+    cosmicTruth?: string;                  // 宇宙真理碎片
+    tentacleCount?: number;                // 触手数量
     category: '吉星吉神' | '凶星凶神' | '特殊神煞';
     rarity: '⭐' | '⭐⭐' | '⭐⭐⭐';
     element: '火' | '水' | '木' | '金' | '土' | '特殊';

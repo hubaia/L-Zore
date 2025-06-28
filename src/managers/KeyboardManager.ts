@@ -28,6 +28,7 @@ export class KeyboardManager {
      */
     setupKeyboardControls(callbacks: {
         toggleAudio: () => void;
+        toggleSpeech: () => boolean;
         restartGame: () => void;
         useSpecialAbility: () => void;
         drawCard: () => void;
@@ -44,6 +45,7 @@ export class KeyboardManager {
         this.keys.SPACE = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
         this.keys.ESC = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
         this.keys.D = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
+        this.keys.V = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.V);
         this.keys.P = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.P);
         this.keys.H = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.H);
         
@@ -60,7 +62,7 @@ export class KeyboardManager {
         // 设置按键事件监听
         this.setupKeyEvents(callbacks);
         
-        this.showMessage('⌨️ 键盘控制已启用：M-音乐 | R-重启 | 空格-特殊技能 | D-抽卡 | P-暂停', 'success');
+        this.showMessage('⌨️ 键盘控制已启用：M-音乐 | V-语音 | R-重启 | 空格-特殊技能 | D-抽卡 | P-暂停', 'success');
     }
     
     /**
@@ -68,6 +70,7 @@ export class KeyboardManager {
      */
     private setupKeyEvents(callbacks: {
         toggleAudio: () => void;
+        toggleSpeech: () => boolean;
         restartGame: () => void;
         useSpecialAbility: () => void;
         drawCard: () => void;
@@ -77,6 +80,12 @@ export class KeyboardManager {
         this.keys.M.on('down', () => {
             callbacks.toggleAudio();
             this.showMessage('🎵 音乐切换', 'success');
+        });
+        
+        // V键 - 切换语音合成
+        this.keys.V.on('down', () => {
+            const isEnabled = callbacks.toggleSpeech();
+            this.showMessage(isEnabled ? '🎤 语音合成已开启' : '🔇 语音合成已关闭', 'success');
         });
         
         // R键 - 重新开始游戏（仅在游戏结束时）
@@ -227,6 +236,7 @@ export class KeyboardManager {
             '',
             '⌨️ 基础操作：',
             'M键 - 切换背景音乐',
+            'V键 - 切换语音合成',
             'D键 - 抽取卡牌',
             '空格键 - 使用特殊能力',
             'P键/ESC键 - 暂停/继续游戏',
@@ -243,6 +253,11 @@ export class KeyboardManager {
             '• 神煞卡牌具有特殊效果',
             '• 五行相克会触发元素中和',
             '• 即时战斗系统，抢夺优先权',
+            '',
+            '🎵 音频体验：',
+            '• 背景音乐自动调低，突出语音效果',
+            '• 神煞入场台词高音量戏剧播报',
+            '• V键快速开关语音功能',
             '',
             '🔮 特殊能力基于你的八字属性！'
         ];

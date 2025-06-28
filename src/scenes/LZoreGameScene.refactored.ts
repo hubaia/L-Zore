@@ -21,6 +21,7 @@ import { KeyboardManager } from '../managers/KeyboardManager';
 import { AssetManager } from '../managers/AssetManager';
 import { ReactEventManager } from '../managers/ReactEventManager';
 import { UtilityManager } from '../managers/UtilityManager';
+import { SpeechSynthesisManager } from '../managers/SpeechSynthesisManager';
 import { LifeElementManager } from '../managers/LifeElementManager';
 import { CardHistoryManager } from '../managers/CardHistoryManager';
 
@@ -68,6 +69,7 @@ export class LZoreGameScene extends Phaser.Scene {
     private assetManager!: AssetManager;
     private reactEventManager!: ReactEventManager;
     private utilityManager!: UtilityManager;
+    private speechSynthesisManager!: SpeechSynthesisManager;
     private lifeElementManager!: LifeElementManager;
     private cardHistoryManager!: CardHistoryManager;
     
@@ -183,6 +185,7 @@ export class LZoreGameScene extends Phaser.Scene {
                                 // 添加键盘快捷键支持 - 使用KeyboardManager
                                 this.keyboardManager.setupKeyboardControls({
                                     toggleAudio: () => this.audioManager.toggleAudio(),
+                                    toggleSpeech: () => this.speechSynthesisManager.toggle(),
                                     restartGame: () => this.restartGame(),
                                     useSpecialAbility: () => this.useSpecialAbility(),
                                     drawCard: () => this.drawCard(),
@@ -400,6 +403,9 @@ export class LZoreGameScene extends Phaser.Scene {
             (text, type) => this.uiManager.showMessage(text, type)
         );
         
+        // 初始化语音合成管理器
+        this.speechSynthesisManager = new SpeechSynthesisManager(this);
+        
         // 初始化生命元素管理器
         this.lifeElementManager = new LifeElementManager(
             this,
@@ -541,6 +547,9 @@ export class LZoreGameScene extends Phaser.Scene {
         
         // 更新UI状态
         this.updateGameStateUI();
+        
+        // 语音播报神煞入场台词
+        this.speechSynthesisManager.speakEntranceQuote(cardData);
         
         // 所有卡牌放置后都弹出效果面板
         this.openEffectPanel(cardData, card);
@@ -829,7 +838,11 @@ export class LZoreGameScene extends Phaser.Scene {
             const damage = Math.min(cardData.power, this.gameState.opponentRemainingElements);
             this.gameState.opponentRemainingElements -= damage;
             
-            this.uiManager.showMessage(`对${this.getPillarName(targetPosition)}造成${damage}点元素伤害！对手剩余${this.gameState.opponentRemainingElements}枚元素`, 'error');
+            const battleMessage = `对${this.getPillarName(targetPosition)}造成${damage}点元素伤害！对手剩余${this.gameState.opponentRemainingElements}枚元素`;
+            this.uiManager.showMessage(battleMessage, 'error');
+            
+            // 语音播报战斗信息
+            this.speechSynthesisManager.speakBattleInfo(`造成${damage}点伤害，对手剩余${this.gameState.opponentRemainingElements}枚元素`);
             
             // 战斗中生成生命元素
             const combatElements = this.lifeElementManager.generateLifeElementsOnCombat(cardData, 'player');
