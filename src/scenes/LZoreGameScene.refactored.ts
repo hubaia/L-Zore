@@ -1411,13 +1411,48 @@ export class LZoreGameScene extends Phaser.Scene {
             return;
         }
         
-        // 默认分配策略：将所有威力分配给第一个目标
-        const firstTarget = targets[0];
         const totalPower = cardData.power;
+        let defaultAllocations: Record<string, number> = {};
         
-        const defaultAllocations: Record<string, number> = {
-            [firstTarget.id]: totalPower
-        };
+        // 🔥 凶神规则处理：凶神伤害时必须至少分配1点给己方目标
+        if (cardData.type === 'inauspicious' && actionType === 'damage') {
+            console.log('💀 凶神默认分配：遵循凶神规则');
+            
+            // 分离己方和敌方目标
+            const playerTargets = targets.filter(target => target.owner === 'player');
+            const opponentTargets = targets.filter(target => target.owner === 'opponent');
+            
+            if (playerTargets.length > 0 && opponentTargets.length > 0) {
+                // 凶神规则：至少1点给己方，其余给敌方
+                const playerAllocation = 1;
+                const opponentAllocation = totalPower - playerAllocation;
+                
+                if (opponentAllocation > 0) {
+                    defaultAllocations[playerTargets[0].id] = playerAllocation;
+                    defaultAllocations[opponentTargets[0].id] = opponentAllocation;
+                    console.log(`💀 凶神分配：${playerAllocation}炁克→己方，${opponentAllocation}炁克→敌方`);
+                } else {
+                    // 如果总威力只有1点，全部分配给己方（凶神自噬）
+                    defaultAllocations[playerTargets[0].id] = totalPower;
+                    console.log(`💀 凶神自噬：${totalPower}炁克→己方`);
+                }
+            } else if (playerTargets.length > 0) {
+                // 只有己方目标，全部分配给己方（凶神自噬）
+                defaultAllocations[playerTargets[0].id] = totalPower;
+                console.log(`💀 凶神自噬：${totalPower}炁克→己方（无敌方目标）`);
+            } else if (opponentTargets.length > 0) {
+                // 只有敌方目标，违反凶神规则，但作为兜底策略分配给敌方
+                defaultAllocations[opponentTargets[0].id] = totalPower;
+                console.log(`⚠️ 凶神异常：${totalPower}炁克→敌方（无己方目标，违反规则）`);
+            }
+        } else {
+            // 🔥 非凶神或非伤害：使用原来的默认分配策略
+            const firstTarget = targets[0];
+            defaultAllocations = {
+                [firstTarget.id]: totalPower
+            };
+            console.log(`⏰ 常规分配：${totalPower}炁克→${firstTarget.name}`);
+        }
         
         console.log('⏰ 使用默认分配策略:', defaultAllocations);
         
