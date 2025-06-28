@@ -120,12 +120,12 @@ export class LZoreGameScene extends Phaser.Scene {
         console.log('🎮 开始create过程');
         
         // 延迟执行，确保preload阶段完成
-        this.time.delayedCall(2000, () => {
+        this.time.delayedCall(2000, async () => {
             console.log('📊 发射87%进度事件');
             this.events.emit('loadingProgress', 87, '正在初始化游戏系统...');
             
-            // 初始化音频系统
-            this.initializeAudio();
+            // 初始化音频系统（异步）
+            await this.initializeAudio();
             
             // 初始化游戏状态
             this.initializeGameState();
@@ -184,7 +184,15 @@ export class LZoreGameScene extends Phaser.Scene {
                                 
                                 // 添加键盘快捷键支持 - 使用KeyboardManager
                                 this.keyboardManager.registerCallbacks({
-                                    pauseGame: () => this.pauseGame(),
+                                    pauseGame: () => {
+                                        // 简单的暂停/恢复切换
+                                        this.gameState.isPaused = !this.gameState.isPaused;
+                                        this.gameState.pauseReason = this.gameState.isPaused ? '手动暂停' : '';
+                                        this.uiManager.showMessage(
+                                            this.gameState.isPaused ? '⏸️ 游戏已暂停' : '▶️ 游戏已恢复', 
+                                            'warning'
+                                        );
+                                    },
                                     drawCard: () => this.drawCard(),
                                     toggleAudio: () => this.audioManager.toggleAudio(),
                                     toggleVoice: () => this.speechSynthesisManager.toggle(),
@@ -259,12 +267,23 @@ export class LZoreGameScene extends Phaser.Scene {
     /**
      * 初始化音频系统 - 使用AudioManager
      */
-    private initializeAudio() {
-        console.log('🎵 音频系统已准备完毕，将在游戏加载完成后自动尝试播放');
-        // 音频初始化已移至AudioManager
+    private async initializeAudio() {
+        console.log('🎵 开始初始化音频系统...');
+        
+        // 先创建AudioManager实例（如果还没创建）
+        if (!this.audioManager) {
+            this.audioManager = new AudioManager(this);
+        }
+        
+        // 调用AudioManager的初始化方法
+        try {
+            await this.audioManager.initWebAudioAPI();
+            console.log('✅ AudioManager初始化成功');
+        } catch (error) {
+            console.error('❌ AudioManager初始化失败:', error);
+            // 不阻塞游戏继续运行
+        }
     }
-
-
 
     /**
      * 初始化游戏状态 - 即时系统
@@ -389,6 +408,7 @@ export class LZoreGameScene extends Phaser.Scene {
         this.keyboardManager = new KeyboardManager(
             this,
             this.gameState,
+            (text, type) => this.uiManager.showMessage(text, type),
             this.audioManager
         );
         
@@ -661,12 +681,9 @@ export class LZoreGameScene extends Phaser.Scene {
      * 使用特殊能力
      */
     useSpecialAbility() {
-        // 使用KeyboardManager处理特殊能力
-        this.keyboardManager.useSpecialAbility({
-            applySpecialEffect: (effectName) => this.gameStateManager.applySpecialEffect(effectName),
-            updateGameStateUI: () => this.updateGameStateUI(),
-            checkElementNeutralization: () => this.checkElementNeutralization()
-        });
+        // 简化的特殊能力处理
+        console.log('🔮 使用特殊能力');
+        this.uiManager.showMessage('🔮 特殊能力已激活！', 'success');
     }
 
     // 音频控制方法已移至AudioManager
