@@ -271,9 +271,10 @@ export const LZorePhaserGame: React.FC<LZorePhaserGameProps> = ({
                 
                 {/* 加载提示 */}
                 <div className="text-purple-300 text-sm space-y-1">
-                    <p>🎵 准备背景音乐</p>
-                    <p>🎨 加载神煞卡牌</p>
-                    <p>⚡ 初始化战斗系统</p>
+                    {loadingProgress < 50 && <p>🎵 准备背景音乐</p>}
+                    {loadingProgress >= 50 && loadingProgress < 90 && <p>🎨 加载神煞卡牌</p>}
+                    {loadingProgress >= 90 && loadingProgress < 100 && <p>⚡ 初始化战斗系统</p>}
+                    {loadingProgress >= 100 && <p>🎶 准备播放背景音乐</p>}
                 </div>
                 
                 {/* 调试按钮 - 仅在卡住时显示 */}

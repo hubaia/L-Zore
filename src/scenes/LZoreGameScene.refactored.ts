@@ -201,13 +201,8 @@ export class LZoreGameScene extends Phaser.Scene {
                                 // 延迟发送游戏就绪事件，确保所有资源完全加载
                                 this.time.delayedCall(500, () => {
                                     console.log('🎮 发射gameReady事件');
+                                    console.log('✅ 游戏创建完成！等待loading界面完成后播放BGM');
                                     this.events.emit('gameReady');
-                                    
-                                    // 延迟自动尝试播放背景音乐
-                                    this.time.delayedCall(1500, async () => {
-                                        await this.audioManager.initWebAudioAPI();
-                                        this.audioManager.autoStartBackgroundMusic();
-                                    });
                                 });
                             });
                         });
