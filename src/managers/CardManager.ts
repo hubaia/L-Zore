@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import type { LZoreCard, GameState } from '../types/gameTypes';
 import { CARD_DATABASE, GAME_CONFIG } from '../constants/gameData';
 import { getElementText, getCardTypeColor, getPillarName, isPositionSafe } from '../utils/gameUtils';
+import { AudioManager } from './AudioManager';
 
 /**
  * 卡牌管理器 - 处理所有卡牌相关功能
@@ -13,6 +14,7 @@ export class CardManager {
     private gameState: GameState;
     private cardDatabase: LZoreCard[];
     private showMessage: (text: string, type?: 'success' | 'warning' | 'error') => void;
+    private audioManager: AudioManager | null = null;
     
     // 卡牌组和相关数据
     private playerHand!: Phaser.GameObjects.Group;
@@ -29,12 +31,14 @@ export class CardManager {
     constructor(
         scene: Phaser.Scene, 
         gameState: GameState, 
-        showMessage: (text: string, type?: 'success' | 'warning' | 'error') => void
+        showMessage: (text: string, type?: 'success' | 'warning' | 'error') => void,
+        audioManager?: AudioManager
     ) {
         this.scene = scene;
         this.gameState = gameState;
         this.showMessage = showMessage;
         this.cardDatabase = [...CARD_DATABASE];
+        this.audioManager = audioManager || null;
     }
     
     /**
@@ -75,18 +79,24 @@ export class CardManager {
         if (!this.playerHand) {
             console.error('❌ CardManager: playerHand未初始化，请先调用setHandGroups()');
             this.showMessage('卡牌系统未就绪！', 'error');
+            this.audioManager?.playUISFX('error');
             return null;
         }
         
         if (this.playerHand.children.entries.length >= 7) {
             this.showMessage('手牌已满！', 'warning');
+            this.audioManager?.playUISFX('error');
             return null;
         }
         
         if (this.playerDeckCount <= 0) {
             this.showMessage('牌库已空！', 'error');
+            this.audioManager?.playUISFX('error');
             return null;
         }
+        
+        // 播放抽卡音效
+        this.audioManager?.playCardSFX('draw');
         
         // 减少牌库数量
         this.playerDeckCount--;
@@ -115,6 +125,7 @@ export class CardManager {
         });
         
         this.showMessage(`抽到了 ${randomCard.name}！剩余牌库：${this.playerDeckCount}张`, 'success');
+        this.audioManager?.playUISFX('success');
         
         return cardContainer;
     }
@@ -135,6 +146,9 @@ export class CardManager {
         if (this.opponentDeckCount <= 0) {
             return null; // 牌库已空
         }
+        
+        // 播放抽卡音效（音量稍低，表示对手抽卡）
+        this.audioManager?.playSFX('card_draw', 0.7);
         
         // 减少对手牌库数量
         this.opponentDeckCount--;
@@ -257,6 +271,9 @@ export class CardManager {
         const originalY = cardContainer.y;
         
         cardContainer.on('pointerover', () => {
+            // 播放悬停音效
+            this.audioManager?.playCardSFX('hover');
+            
             // 悬停时放大并上移
             this.scene.tweens.add({
                 targets: cardContainer,
@@ -284,6 +301,11 @@ export class CardManager {
             
             cardContainer.setDepth(0);
         });
+        
+        // 添加点击选择音效
+        cardContainer.on('pointerdown', () => {
+            this.audioManager?.playCardSFX('select');
+        });
     }
     
     /**
@@ -303,6 +325,9 @@ export class CardManager {
         });
         
         if (usedCard) {
+            // 播放卡牌激活音效
+            this.audioManager?.playCardSFX('activate');
+            
             // 添加到弃牌堆
             this.discardPile.push(cardData);
             
@@ -475,6 +500,9 @@ export class CardManager {
         if (existingGlow) {
             return; // 已有光效，不重复创建
         }
+        
+        // 播放生命元素激活音效
+        this.audioManager?.playShenshaSFX('activate');
         
         // 创建光效
         const glow = this.scene.add.graphics();

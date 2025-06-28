@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import type { GameState } from '../types/gameTypes';
 import { GAME_CONFIG } from '../constants/gameData';
 import { getPillarName } from '../utils/gameUtils';
+import { AudioManager } from './AudioManager';
 
 /**
  * 战场管理器
@@ -16,17 +17,20 @@ export class BattlefieldManager {
     private draggedCard: Phaser.GameObjects.Container | null = null;
     private messageCallback: (text: string, type: 'success' | 'warning' | 'error') => void;
     private onCardPlaced: (card: Phaser.GameObjects.Container, position: number) => void;
+    private audioManager: AudioManager | null = null;
 
     constructor(
         scene: Phaser.Scene,
         gameState: GameState,
         messageCallback: (text: string, type: 'success' | 'warning' | 'error') => void,
-        onCardPlaced: (card: Phaser.GameObjects.Container, position: number) => void
+        onCardPlaced: (card: Phaser.GameObjects.Container, position: number) => void,
+        audioManager?: AudioManager
     ) {
         this.scene = scene;
         this.gameState = gameState;
         this.messageCallback = messageCallback;
         this.onCardPlaced = onCardPlaced;
+        this.audioManager = audioManager || null;
     }
 
     /**
@@ -154,8 +158,12 @@ export class BattlefieldManager {
         this.scene.input.on('dragstart', (pointer: Phaser.Input.Pointer, gameObject: Phaser.GameObjects.Container) => {
             if (!this.gameState.canPlayerUseCards) {
                 this.messageCallback('冷却期间无法使用卡牌！', 'warning');
+                this.audioManager?.playUISFX('error');
                 return;
             }
+            
+            // 播放拖拽开始音效
+            this.audioManager?.playCardSFX('select');
             
             this.draggedCard = gameObject;
             gameObject.setDepth(1000);
@@ -183,6 +191,9 @@ export class BattlefieldManager {
                 
                 console.log(`卡牌拖拽结束，恢复到原位置: (${originalX}, ${originalY})`);
                 
+                // 播放取消放置音效
+                this.audioManager?.playUISFX('cancel');
+                
                 this.scene.tweens.add({
                     targets: this.draggedCard,
                     x: originalX,
@@ -202,6 +213,7 @@ export class BattlefieldManager {
         this.scene.input.on('drop', (pointer: Phaser.Input.Pointer, gameObject: Phaser.GameObjects.Container, dropZone: Phaser.GameObjects.Zone) => {
             if (!this.gameState.canPlayerUseCards) {
                 this.messageCallback('冷却期间无法使用卡牌！', 'warning');
+                this.audioManager?.playUISFX('error');
                 return;
             }
             
@@ -211,11 +223,24 @@ export class BattlefieldManager {
             // 检查位置是否已被占用
             if (this.isPositionOccupied(position)) {
                 this.messageCallback(`位置 ${position} (${getPillarName(position)}) 已被占用！`, 'error');
+                this.audioManager?.playUISFX('error');
                 console.log('战场状态:', this.gameState.battleFieldPositions);
                 return;
             }
             
             console.log(`放置卡牌到位置 ${position}，卡牌数据:`, cardData);
+            
+            // 播放卡牌放置音效
+            this.audioManager?.playCardSFX('place');
+            
+            // 根据神煞类型播放对应音效
+            if (cardData.type === 'auspicious') {
+                this.audioManager?.playShenshaSFX('auspicious');
+            } else if (cardData.type === 'inauspicious') {
+                this.audioManager?.playShenshaSFX('inauspicious');
+            } else {
+                this.audioManager?.playShenshaSFX('special');
+            }
             
             // 移动卡牌到新位置
             gameObject.x = dropZone.x;
@@ -239,6 +264,7 @@ export class BattlefieldManager {
             this.onCardPlaced(gameObject, position);
             
             this.messageCallback(`卡牌放置在${getPillarName(position)}位置！`, 'success');
+            this.audioManager?.playUISFX('confirm');
             
             // 重要：确保拖拽状态被清理
             this.draggedCard = null;
@@ -253,6 +279,11 @@ export class BattlefieldManager {
             if (highlight) {
                 cell.setStrokeStyle(3, 0x00ff88, 0.8);
                 cell.setFillStyle(0x00ff88, 0.2);
+                
+                // 播放区域高亮音效
+                if (highlight) {
+                    this.audioManager?.playSFX('ui_button_hover', 0.5);
+                }
             } else {
                 cell.setStrokeStyle(2, 0x0066ff, 0.3);
                 cell.setFillStyle(0x0066ff, 0.1);

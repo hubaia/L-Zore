@@ -183,13 +183,12 @@ export class LZoreGameScene extends Phaser.Scene {
                                 this.utilityManager.startGlobalPositionMonitor(() => this.updateCardHoverEffects());
                                 
                                 // 添加键盘快捷键支持 - 使用KeyboardManager
-                                this.keyboardManager.setupKeyboardControls({
-                                    toggleAudio: () => this.audioManager.toggleAudio(),
-                                    toggleSpeech: () => this.speechSynthesisManager.toggle(),
-                                    restartGame: () => this.restartGame(),
-                                    useSpecialAbility: () => this.useSpecialAbility(),
+                                this.keyboardManager.registerCallbacks({
+                                    pauseGame: () => this.pauseGame(),
                                     drawCard: () => this.drawCard(),
-                                    pauseGame: () => this.keyboardManager.pauseGame()
+                                    toggleAudio: () => this.audioManager.toggleAudio(),
+                                    toggleVoice: () => this.speechSynthesisManager.toggle(),
+                                    autoDrawCards: () => this.autoDrawCards()
                                 });
                             
                             this.time.delayedCall(300, () => {
@@ -374,7 +373,8 @@ export class LZoreGameScene extends Phaser.Scene {
         this.cardManager = new CardManager(
             this,
             this.gameState,
-            (text, type) => this.uiManager.showMessage(text, type)
+            (text, type) => this.uiManager.showMessage(text, type),
+            this.audioManager
         );
         
         // 初始化元素中和管理器
@@ -394,7 +394,7 @@ export class LZoreGameScene extends Phaser.Scene {
         this.keyboardManager = new KeyboardManager(
             this,
             this.gameState,
-            (text, type) => this.uiManager.showMessage(text, type)
+            this.audioManager
         );
         
         // 初始化工具管理器
@@ -474,7 +474,8 @@ export class LZoreGameScene extends Phaser.Scene {
             this,
             this.gameState,
             (text, type) => this.uiManager.showMessage(text, type),
-            (card, position) => this.onCardPlaced(card, position)
+            (card, position) => this.onCardPlaced(card, position),
+            this.audioManager
         );
         
         // 启动实时系统

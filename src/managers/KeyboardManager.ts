@@ -1,4 +1,6 @@
+import Phaser from 'phaser';
 import type { GameState } from '../types/gameTypes';
+import { AudioManager } from './AudioManager';
 
 /**
  * 键盘管理器 - 处理键盘快捷键相关功能
@@ -12,313 +14,305 @@ export class KeyboardManager {
     // 键盘对象
     private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
     private keys: { [key: string]: Phaser.Input.Keyboard.Key } = {};
+    private helpText: Phaser.GameObjects.Text | null = null;
+    private isHelpVisible: boolean = false;
+    private audioManager: AudioManager | null = null;
+    
+    // 键盘回调函数接口
+    private callbacks: {
+        pauseGame: () => void;
+        drawCard: () => void;
+        toggleAudio: () => void;
+        toggleVoice: () => void;
+        autoDrawCards: () => void;
+    } = {
+        pauseGame: () => {},
+        drawCard: () => {},
+        toggleAudio: () => {},
+        toggleVoice: () => {},
+        autoDrawCards: () => {}
+    };
     
     constructor(
         scene: Phaser.Scene, 
         gameState: GameState, 
-        showMessage: (text: string, type?: 'success' | 'warning' | 'error') => void
+        showMessage: (text: string, type?: 'success' | 'warning' | 'error') => void,
+        audioManager?: AudioManager
     ) {
         this.scene = scene;
         this.gameState = gameState;
         this.showMessage = showMessage;
+        this.audioManager = audioManager || null;
+        this.createKeys();
+        this.setupKeyboardEvents();
     }
     
     /**
-     * 设置键盘控制
+     * 创建键盘按键
      */
-    setupKeyboardControls(callbacks: {
-        toggleAudio: () => void;
-        toggleSpeech: () => boolean;
-        restartGame: () => void;
-        useSpecialAbility: () => void;
-        drawCard: () => void;
-        pauseGame: () => void;
-    }): void {
-        if (!this.scene.input.keyboard) return;
+    private createKeys(): void {
+        if (!this.scene.input.keyboard) {
+            console.warn('❌ KeyboardManager: 键盘输入未启用');
+            return;
+        }
         
-        // 创建方向键
-        this.cursors = this.scene.input.keyboard.createCursorKeys();
-        
-        // 创建字母键
-        this.keys.M = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.M);
-        this.keys.R = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
-        this.keys.SPACE = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+        // 主要功能键
         this.keys.ESC = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
+        this.keys.SPACE = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+        this.keys.ENTER = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER);
+        
+        // 游戏功能键
         this.keys.D = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
+        this.keys.A = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
+        this.keys.M = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.M);
         this.keys.V = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.V);
-        this.keys.P = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.P);
+        
+        // 音效控制键
+        this.keys.S = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S);
+        this.keys.ONE = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ONE);
+        this.keys.TWO = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.TWO);
+        this.keys.THREE = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.THREE);
+        this.keys.FOUR = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.FOUR);
+        this.keys.FIVE = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.FIVE);
+        
+        // 帮助键
         this.keys.H = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.H);
+        this.keys.F1 = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.F1);
         
-        // 数字键（1-8用于快速选择格子）
-        this.keys.NUM_1 = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ONE);
-        this.keys.NUM_2 = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.TWO);
-        this.keys.NUM_3 = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.THREE);
-        this.keys.NUM_4 = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.FOUR);
-        this.keys.NUM_5 = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.FIVE);
-        this.keys.NUM_6 = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SIX);
-        this.keys.NUM_7 = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SEVEN);
-        this.keys.NUM_8 = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.EIGHT);
-        
-        // 设置按键事件监听
-        this.setupKeyEvents(callbacks);
-        
-        this.showMessage('⌨️ 键盘控制已启用：M-音乐 | V-语音 | R-重启 | 空格-特殊技能 | D-抽卡 | P-暂停', 'success');
+        console.log('✅ KeyboardManager: 键盘按键创建完成');
     }
     
     /**
-     * 设置按键事件
+     * 设置键盘事件监听
      */
-    private setupKeyEvents(callbacks: {
-        toggleAudio: () => void;
-        toggleSpeech: () => boolean;
-        restartGame: () => void;
-        useSpecialAbility: () => void;
-        drawCard: () => void;
-        pauseGame: () => void;
-    }): void {
-        // M键 - 切换音乐
-        this.keys.M.on('down', () => {
-            callbacks.toggleAudio();
-            this.showMessage('🎵 音乐切换', 'success');
+    private setupKeyboardEvents(): void {
+        // ESC - 暂停/恢复游戏
+        this.keys.ESC?.on('down', () => {
+            this.audioManager?.playUISFX('button_click');
+            this.callbacks.pauseGame();
         });
         
-        // V键 - 切换语音合成
-        this.keys.V.on('down', () => {
-            const isEnabled = callbacks.toggleSpeech();
-            this.showMessage(isEnabled ? '🎤 语音合成已开启' : '🔇 语音合成已关闭', 'success');
-        });
-        
-        // R键 - 重新开始游戏（仅在游戏结束时）
-        this.keys.R.on('down', () => {
-            if (this.gameState.gamePhase === 'ended') {
-                callbacks.restartGame();
-            } else {
-                this.showMessage('⚠️ 只能在游戏结束时重新开始', 'warning');
-            }
-        });
-        
-        // 空格键 - 使用特殊能力
-        this.keys.SPACE.on('down', () => {
-            if (!this.gameState.isPaused) {
-                callbacks.useSpecialAbility();
-            }
-        });
-        
-        // D键 - 抽卡
-        this.keys.D.on('down', () => {
+        // D - 抽卡
+        this.keys.D?.on('down', () => {
             if (!this.gameState.isPaused && this.gameState.canPlayerUseCards) {
-                callbacks.drawCard();
+                this.audioManager?.playUISFX('button_click');
+                this.callbacks.drawCard();
             } else {
-                this.showMessage('⚠️ 当前无法抽卡', 'warning');
+                this.audioManager?.playUISFX('error');
             }
         });
         
-        // P键或ESC键 - 暂停/继续游戏
-        this.keys.P.on('down', () => {
-            callbacks.pauseGame();
+        // A - 自动抽卡
+        this.keys.A?.on('down', () => {
+            this.audioManager?.playUISFX('button_click');
+            this.callbacks.autoDrawCards();
         });
         
-        this.keys.ESC.on('down', () => {
-            callbacks.pauseGame();
+        // M - 切换背景音乐
+        this.keys.M?.on('down', () => {
+            this.audioManager?.playUISFX('button_click');
+            this.callbacks.toggleAudio();
         });
         
-        // H键 - 显示帮助
-        this.keys.H.on('down', () => {
-            this.showHelpInfo();
+        // V - 切换语音合成
+        this.keys.V?.on('down', () => {
+            this.audioManager?.playUISFX('button_click');
+            this.callbacks.toggleVoice();
         });
         
-        // 数字键快速选择格子
-        this.keys.NUM_1.on('down', () => this.selectBattlefieldPosition(0));
-        this.keys.NUM_2.on('down', () => this.selectBattlefieldPosition(1));
-        this.keys.NUM_3.on('down', () => this.selectBattlefieldPosition(2));
-        this.keys.NUM_4.on('down', () => this.selectBattlefieldPosition(3));
-        this.keys.NUM_5.on('down', () => this.selectBattlefieldPosition(4));
-        this.keys.NUM_6.on('down', () => this.selectBattlefieldPosition(5));
-        this.keys.NUM_7.on('down', () => this.selectBattlefieldPosition(6));
-        this.keys.NUM_8.on('down', () => this.selectBattlefieldPosition(7));
+        // S - 切换音效开关
+        this.keys.S?.on('down', () => {
+            if (this.audioManager) {
+                const isEnabled = this.audioManager.toggleSFX();
+                this.audioManager.playUISFX('button_click');
+                this.showSFXMessage(`音效已${isEnabled ? '开启' : '关闭'}`);
+            }
+        });
+        
+        // 数字键1-5 - 音效音量调节
+        this.keys.ONE?.on('down', () => this.setSFXVolume(0.2, '20%'));
+        this.keys.TWO?.on('down', () => this.setSFXVolume(0.4, '40%'));
+        this.keys.THREE?.on('down', () => this.setSFXVolume(0.6, '60%'));
+        this.keys.FOUR?.on('down', () => this.setSFXVolume(0.8, '80%'));
+        this.keys.FIVE?.on('down', () => this.setSFXVolume(1.0, '100%'));
+        
+        // H/F1 - 显示/隐藏帮助
+        this.keys.H?.on('down', () => {
+            this.audioManager?.playUISFX('button_click');
+            this.toggleHelp();
+        });
+        this.keys.F1?.on('down', () => {
+            this.audioManager?.playUISFX('button_click');
+            this.toggleHelp();
+        });
+        
+        console.log('✅ KeyboardManager: 键盘事件监听设置完成');
     }
     
     /**
-     * 使用特殊能力
+     * 设置音效音量
      */
-    useSpecialAbility(callbacks: {
-        applySpecialEffect: (effectName: string) => void;
-        updateGameStateUI: () => void;
-        checkElementNeutralization: () => void;
-    }): void {
-        if (this.gameState.isPaused) {
-            this.showMessage('⚠️ 游戏暂停中，无法使用特殊能力', 'warning');
-            return;
+    private setSFXVolume(volume: number, description: string): void {
+        if (this.audioManager) {
+            this.audioManager.setSFXVolume(volume);
+            this.audioManager.playUISFX('confirm');
+            this.showSFXMessage(`音效音量设置为 ${description}`);
         }
-        
-        if (!this.gameState.canPlayerUseCards) {
-            this.showMessage('⚠️ 当前不是玩家回合，无法使用特殊能力', 'warning');
-            return;
-        }
-        
-        // 根据玩家八字决定特殊能力类型
-        const abilityType = this.determineSpecialAbility();
-        
-        this.showMessage(`🌟 发动特殊能力：${abilityType}！`, 'warning');
-        
-        // 执行特殊效果
-        callbacks.applySpecialEffect(abilityType);
-        
-        // 更新UI显示最新状态
-        callbacks.updateGameStateUI();
-        
-        // 检查是否触发元素中和
-        callbacks.checkElementNeutralization();
-        
-        // 冷却时间
-        this.gameState.playerCooldownRemaining = 5; // 5秒冷却
     }
     
     /**
-     * 确定特殊能力类型
+     * 显示音效相关消息
      */
-    private determineSpecialAbility(): string {
-        // 基于玩家八字的五行属性决定特殊能力
-        // 这里可以实现复杂的八字分析逻辑
-        const abilities = ['全体增益', '全体伤害', '中和效果', '时间加速', '元素转换'];
+    private showSFXMessage(message: string): void {
+        // 创建临时消息显示
+        const messageText = this.scene.add.text(
+            this.scene.cameras.main.width / 2,
+            this.scene.cameras.main.height - 150,
+            `🔊 ${message}`,
+            {
+                fontSize: '18px',
+                color: '#00ff88',
+                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                padding: { x: 12, y: 8 }
+            }
+        );
+        messageText.setOrigin(0.5);
+        messageText.setDepth(1000);
         
-        // 简化版本：根据当前游戏状态选择
-        if (this.gameState.playerRemainingElements <= 3) {
-            return '全体增益'; // 血量低时优选治疗
-        } else if (this.gameState.opponentRemainingElements <= 3) {
-            return '全体伤害'; // 对手血量低时优选攻击
+        // 3秒后自动消失
+        this.scene.time.delayedCall(3000, () => {
+            if (messageText && messageText.active) {
+                messageText.destroy();
+            }
+        });
+    }
+    
+    /**
+     * 切换帮助显示
+     */
+    private toggleHelp(): void {
+        if (this.isHelpVisible) {
+            this.hideHelp();
         } else {
-            return abilities[Math.floor(Math.random() * abilities.length)];
+            this.showHelp();
         }
-    }
-    
-    /**
-     * 选择战场位置
-     */
-    private selectBattlefieldPosition(position: number): void {
-        if (this.gameState.isPaused) return;
-        
-        this.showMessage(`🎯 选择战场位置 ${position + 1}`, 'success');
-        
-        // 发射事件给战场管理器
-        this.scene.events.emit('battlefieldPositionSelected', position);
-    }
-    
-    /**
-     * 暂停/继续游戏
-     */
-    pauseGame(): void {
-        if (this.gameState.gamePhase === 'ended') {
-            this.showMessage('⚠️ 游戏已结束，无法暂停', 'warning');
-            return;
-        }
-        
-        this.gameState.isPaused = !this.gameState.isPaused;
-        
-        if (this.gameState.isPaused) {
-            this.gameState.pauseReason = '玩家手动暂停';
-            this.showMessage('⏸️ 游戏已暂停，按P或ESC继续', 'warning');
-        } else {
-            this.gameState.pauseReason = '';
-            this.showMessage('▶️ 游戏继续！', 'success');
-        }
-        
-        // 发射暂停状态变化事件
-        this.scene.events.emit('gamePauseStateChanged', this.gameState.isPaused);
     }
     
     /**
      * 显示帮助信息
      */
-    private showHelpInfo(): void {
-        const helpText = [
-            '🎮 L-Zore神煞卡牌游戏 - 键盘操作指南',
-            '',
-            '⌨️ 基础操作：',
-            'M键 - 切换背景音乐',
-            'V键 - 切换语音合成',
-            'D键 - 抽取卡牌',
-            '空格键 - 使用特殊能力',
-            'P键/ESC键 - 暂停/继续游戏',
-            'R键 - 重新开始游戏（游戏结束时）',
-            'H键 - 显示此帮助信息',
-            '',
-            '🎯 战场操作：',
-            '1-8数字键 - 快速选择战场位置',
-            '鼠标拖拽 - 放置卡牌到战场',
-            '双击卡牌 - 自动放置到最佳位置',
-            '',
-            '⚡ 游戏机制：',
-            '• 消耗对手的8枚元素获胜',
-            '• 神煞卡牌具有特殊效果',
-            '• 五行相克会触发元素中和',
-            '• 即时战斗系统，抢夺优先权',
-            '',
-            '🎵 音频体验：',
-            '• 背景音乐自动调低，突出语音效果',
-            '• 神煞入场台词高音量戏剧播报',
-            '• V键快速开关语音功能',
-            '',
-            '🔮 特殊能力基于你的八字属性！'
-        ];
+    private showHelp(): void {
+        if (this.helpText) {
+            this.helpText.destroy();
+        }
         
-        // 显示帮助文本（可以创建一个模态框）
-        console.log(helpText.join('\n'));
-        this.showMessage('💡 帮助信息已显示在控制台中！', 'success');
+        const helpContent = [
+            '🎮 L-Zore 神煞卡牌游戏 - 快捷键说明',
+            '',
+            '⚡ 游戏控制:',
+            '  ESC - 暂停/恢复游戏',
+            '  D   - 抽取卡牌',
+            '  A   - 自动抽卡',
+            '',
+            '🎵 音频控制:',
+            '  M   - 切换背景音乐开关',
+            '  V   - 切换语音合成开关',
+            '  S   - 切换音效开关',
+            '',
+            '🔊 音效音量 (按数字键):',
+            '  1   - 音效音量 20%',
+            '  2   - 音效音量 40%',
+            '  3   - 音效音量 60%',
+            '  4   - 音效音量 80%',
+            '  5   - 音效音量 100%',
+            '',
+            '💡 其他:',
+            '  H/F1 - 显示/隐藏此帮助',
+            '',
+            '按任意键关闭帮助...'
+        ].join('\n');
         
-        // 也可以发射事件给UI显示帮助面板
-        this.scene.events.emit('showHelpPanel', helpText);
+        this.helpText = this.scene.add.text(
+            this.scene.cameras.main.width / 2,
+            this.scene.cameras.main.height / 2,
+            helpContent,
+            {
+                fontSize: '14px',
+                color: '#ffffff',
+                backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                padding: { x: 20, y: 20 },
+                align: 'left'
+            }
+        );
+        this.helpText.setOrigin(0.5);
+        this.helpText.setDepth(1001);
+        
+        this.isHelpVisible = true;
+        
+        // 监听任意键关闭帮助
+        const closeHelp = () => {
+            this.hideHelp();
+            this.scene.input.keyboard?.off('keydown', closeHelp);
+        };
+        this.scene.input.keyboard?.once('keydown', closeHelp);
     }
     
     /**
-     * 检查按键状态
+     * 隐藏帮助信息
      */
-    update(): void {
-        if (!this.cursors) return;
-        
-        // 方向键可以用来快速浏览手牌或战场
-        if (this.cursors.left?.isDown) {
-            this.scene.events.emit('navigateLeft');
+    private hideHelp(): void {
+        if (this.helpText) {
+            this.helpText.destroy();
+            this.helpText = null;
         }
-        
-        if (this.cursors.right?.isDown) {
-            this.scene.events.emit('navigateRight');
-        }
-        
-        if (this.cursors.up?.isDown) {
-            this.scene.events.emit('navigateUp');
-        }
-        
-        if (this.cursors.down?.isDown) {
-            this.scene.events.emit('navigateDown');
-        }
+        this.isHelpVisible = false;
     }
     
     /**
-     * 启用/禁用键盘输入
+     * 注册回调函数
      */
-    setEnabled(enabled: boolean): void {
-        if (!this.scene.input.keyboard) return;
-        
-        this.scene.input.keyboard.enabled = enabled;
-        
-        if (enabled) {
-            this.showMessage('⌨️ 键盘控制已启用', 'success');
-        } else {
-            this.showMessage('⌨️ 键盘控制已禁用', 'warning');
-        }
+    registerCallbacks(callbacks: {
+        pauseGame: () => void;
+        drawCard: () => void;
+        toggleAudio: () => void;
+        toggleVoice: () => void;
+        autoDrawCards: () => void;
+    }): void {
+        this.callbacks = { ...this.callbacks, ...callbacks };
+    }
+    
+    /**
+     * 获取键盘状态
+     */
+    getKeyboardState(): {
+        canPlayerUseCards: boolean;
+        isPaused: boolean;
+        helpVisible: boolean;
+    } {
+        return {
+            canPlayerUseCards: this.gameState.canPlayerUseCards,
+            isPaused: this.gameState.isPaused,
+            helpVisible: this.isHelpVisible
+        };
     }
     
     /**
      * 清理资源
      */
     dispose(): void {
+        // 移除所有按键监听
         Object.values(this.keys).forEach(key => {
             if (key) {
                 key.removeAllListeners();
             }
         });
         
-        this.keys = {};
+        // 清理帮助文本
+        if (this.helpText) {
+            this.helpText.destroy();
+            this.helpText = null;
+        }
+        
+        console.log('🧹 KeyboardManager: 资源清理完成');
     }
 } 

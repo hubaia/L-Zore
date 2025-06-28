@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>L-Zore 音效系统演示</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: #ffffff;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #00ffaa;
+            text-shadow: 0 0 10px rgba(0, 255, 170, 0.5);
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        
+        .section {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(0, 255, 170, 0.3);
+        }
+        
+        .section h2 {
+            color: #88ffff;
+            border-bottom: 2px solid rgba(136, 255, 255, 0.3);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .buttons-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .sfx-button {
+            background: linear-gradient(45deg, #2c5aa0, #1e3a8a);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            padding: 15px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .sfx-button:hover {
+            background: linear-gradient(45deg, #3d6bb0, #2e4a9a);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 255, 170, 0.3);
+        }
+        
+        .sfx-button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        }
+        
+        .status {
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .status.success {
+            border-left: 4px solid #00ff88;
+        }
+        
+        .status.error {
+            border-left: 4px solid #ff4444;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .control-button {
+            background: linear-gradient(45deg, #00ff88, #00cc66);
+            border: none;
+            border-radius: 25px;
+            color: #1a1a2e;
+            padding: 12px 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .control-button:hover {
+            background: linear-gradient(45deg, #00cc66, #00aa44);
+            transform: scale(1.05);
+        }
+        
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+        }
+        
+        .volume-slider {
+            width: 200px;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.2);
+            appearance: none;
+            outline: none;
+        }
+        
+        .volume-slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #00ffaa;
+            cursor: pointer;
+        }
+        
+        .log {
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 10px;
+            padding: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            margin-top: 20px;
+            border: 1px solid rgba(0, 255, 170, 0.3);
+        }
+        
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 5px;
+            border-radius: 3px;
+        }
+        
+        .log-entry.info { background: rgba(0, 255, 170, 0.1); }
+        .log-entry.success { background: rgba(0, 255, 136, 0.1); }
+        .log-entry.error { background: rgba(255, 68, 68, 0.1); }
+        .log-entry.warning { background: rgba(255, 204, 0, 0.1); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔊 L-Zore 音效系统演示</h1>
+        
+        <div class="status" id="status">
+            <strong>状态:</strong> 正在初始化音效系统...
+        </div>
+        
+        <div class="controls">
+            <button class="control-button" onclick="initSFXSystem()">🎵 初始化音效系统</button>
+            <button class="control-button" onclick="toggleSFX()">🔇 切换音效开关</button>
+            <button class="control-button" onclick="testRandomSFX()">🎲 随机测试音效</button>
+            <button class="control-button" onclick="clearLog()">🗑️ 清空日志</button>
+        </div>
+        
+        <div class="volume-control">
+            <span>🔊 音效音量:</span>
+            <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="80" onchange="setVolume(this.value)">
+            <span id="volumeLabel">80%</span>
+        </div>
+        
+        <div class="section">
+            <h2>🃏 卡牌音效</h2>
+            <div class="buttons-grid">
+                <button class="sfx-button" onclick="playSFX('card_draw')">🎴 抽卡音效</button>
+                <button class="sfx-button" onclick="playSFX('card_place')">📍 放置卡牌</button>
+                <button class="sfx-button" onclick="playSFX('card_hover')">👆 卡牌悬停</button>
+                <button class="sfx-button" onclick="playSFX('card_select')">✅ 选择卡牌</button>
+                <button class="sfx-button" onclick="playSFX('card_flip')">🔄 翻转卡牌</button>
+                <button class="sfx-button" onclick="playSFX('card_shuffle')">🔀 洗牌音效</button>
+                <button class="sfx-button" onclick="playSFX('card_activate')">⚡ 激活卡牌</button>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>🎮 UI音效</h2>
+            <div class="buttons-grid">
+                <button class="sfx-button" onclick="playSFX('ui_button_click')">🖱️ 按钮点击</button>
+                <button class="sfx-button" onclick="playSFX('ui_button_hover')">👆 按钮悬停</button>
+                <button class="sfx-button" onclick="playSFX('ui_confirm')">✅ 确认操作</button>
+                <button class="sfx-button" onclick="playSFX('ui_cancel')">❌ 取消操作</button>
+                <button class="sfx-button" onclick="playSFX('ui_error')">⚠️ 错误提示</button>
+                <button class="sfx-button" onclick="playSFX('ui_success')">🎉 成功提示</button>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>⚔️ 战斗音效</h2>
+            <div class="buttons-grid">
+                <button class="sfx-button" onclick="playSFX('battle_attack')">💥 攻击音效</button>
+                <button class="sfx-button" onclick="playSFX('battle_damage')">💔 伤害音效</button>
+                <button class="sfx-button" onclick="playSFX('battle_neutralize')">⚖️ 中和音效</button>
+                <button class="sfx-button" onclick="playSFX('battle_victory')">🏆 胜利音效</button>
+                <button class="sfx-button" onclick="playSFX('battle_defeat')">💀 失败音效</button>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>⚡ 神煞音效</h2>
+            <div class="buttons-grid">
+                <button class="sfx-button" onclick="playSFX('shensha_activate')">🌟 神煞激活</button>
+                <button class="sfx-button" onclick="playSFX('shensha_auspicious')">😇 吉神音效</button>
+                <button class="sfx-button" onclick="playSFX('shensha_inauspicious')">👹 凶神音效</button>
+                <button class="sfx-button" onclick="playSFX('shensha_special')">🎭 特殊神煞</button>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>🔄 系统音效</h2>
+            <div class="buttons-grid">
+                <button class="sfx-button" onclick="playSFX('system_turn_start')">▶️ 回合开始</button>
+                <button class="sfx-button" onclick="playSFX('system_turn_end')">⏹️ 回合结束</button>
+                <button class="sfx-button" onclick="playSFX('system_game_start')">🎮 游戏开始</button>
+                <button class="sfx-button" onclick="playSFX('system_game_end')">🏁 游戏结束</button>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>🎲 组合测试</h2>
+            <div class="buttons-grid">
+                <button class="sfx-button" onclick="testCardSequence()">🎴 卡牌序列测试</button>
+                <button class="sfx-button" onclick="testBattleSequence()">⚔️ 战斗序列测试</button>
+                <button class="sfx-button" onclick="testUISequence()">🎮 UI序列测试</button>
+                <button class="sfx-button" onclick="testShenshaSequence()">⚡ 神煞序列测试</button>
+            </div>
+        </div>
+        
+        <div class="log" id="logContainer">
+            <div class="log-entry info">🔊 音效系统演示页面已加载，点击"初始化音效系统"开始测试</div>
+        </div>
+    </div>
+
+    <script>
+        // 模拟AudioManager类的简化版本
+        class SimpleSFXManager {
+            constructor() {
+                this.audioContext = null;
+                this.sfxBuffers = new Map();
+                this.sfxEnabled = true;
+                this.sfxVolume = 0.8;
+            }
+            
+            async init() {
+                try {
+                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    await this.generateBasicSFX();
+                    this.log('✅ 音效系统初始化成功', 'success');
+                    return true;
+                } catch (error) {
+                    this.log('❌ 音效系统初始化失败: ' + error.message, 'error');
+                    return false;
+                }
+            }
+            
+            async generateBasicSFX() {
+                if (!this.audioContext) return;
+                
+                const sampleRate = this.audioContext.sampleRate;
+                
+                // 🃏 卡牌音效
+                this.sfxBuffers.set('card_draw', this.generateCardDrawSFX(sampleRate));
+                this.sfxBuffers.set('card_place', this.generateCardPlaceSFX(sampleRate));
+                this.sfxBuffers.set('card_hover', this.generateCardHoverSFX(sampleRate));
+                this.sfxBuffers.set('card_select', this.generateCardSelectSFX(sampleRate));
+                this.sfxBuffers.set('card_flip', this.generateCardFlipSFX(sampleRate));
+                this.sfxBuffers.set('card_shuffle', this.generateCardShuffleSFX(sampleRate));
+                this.sfxBuffers.set('card_activate', this.generateCardActivateSFX(sampleRate));
+                
+                // 🎮 UI音效
+                this.sfxBuffers.set('ui_button_click', this.generateButtonClickSFX(sampleRate));
+                this.sfxBuffers.set('ui_button_hover', this.generateButtonHoverSFX(sampleRate));
+                this.sfxBuffers.set('ui_confirm', this.generateConfirmSFX(sampleRate));
+                this.sfxBuffers.set('ui_cancel', this.generateCancelSFX(sampleRate));
+                this.sfxBuffers.set('ui_error', this.generateErrorSFX(sampleRate));
+                this.sfxBuffers.set('ui_success', this.generateSuccessSFX(sampleRate));
+                
+                // ⚔️ 战斗音效
+                this.sfxBuffers.set('battle_attack', this.generateAttackSFX(sampleRate));
+                this.sfxBuffers.set('battle_damage', this.generateDamageSFX(sampleRate));
+                this.sfxBuffers.set('battle_neutralize', this.generateNeutralizeSFX(sampleRate));
+                this.sfxBuffers.set('battle_victory', this.generateVictorySFX(sampleRate));
+                this.sfxBuffers.set('battle_defeat', this.generateDefeatSFX(sampleRate));
+                
+                // ⚡ 神煞音效
+                this.sfxBuffers.set('shensha_activate', this.generateShenshaActivateSFX(sampleRate));
+                this.sfxBuffers.set('shensha_auspicious', this.generateAuspiciousSFX(sampleRate));
+                this.sfxBuffers.set('shensha_inauspicious', this.generateInauspiciousSFX(sampleRate));
+                this.sfxBuffers.set('shensha_special', this.generateSpecialSFX(sampleRate));
+                
+                // 🔄 系统音效
+                this.sfxBuffers.set('system_turn_start', this.generateTurnStartSFX(sampleRate));
+                this.sfxBuffers.set('system_turn_end', this.generateTurnEndSFX(sampleRate));
+                this.sfxBuffers.set('system_game_start', this.generateGameStartSFX(sampleRate));
+                this.sfxBuffers.set('system_game_end', this.generateGameEndSFX(sampleRate));
+                
+                this.log(`🔊 已生成 ${this.sfxBuffers.size} 个音效`, 'info');
+            }
+            
+            // 简化的音效生成方法
+            generateCardDrawSFX(sampleRate) {
+                const duration = 0.3;
+                const buffer = this.audioContext.createBuffer(1, duration * sampleRate, sampleRate);
+                const data = buffer.getChannelData(0);
+                
+                for (let i = 0; i < data.length; i++) {
+                    const t = i / sampleRate;
+                    const noise = (Math.random() - 0.5) * 0.3;
+                    const envelope = Math.exp(-t * 8);
+                    const sweep = Math.sin(2 * Math.PI * (800 + t * 400) * t);
+                    data[i] = (noise + sweep * 0.2) * envelope * 0.4;
+                }
+                
+                return buffer;
+            }
+            
+            generateCardPlaceSFX(sampleRate) {
+                const duration = 0.2;
+                const buffer = this.audioContext.createBuffer(1, duration * sampleRate, sampleRate);
+                const data = buffer.getChannelData(0);
+                
+                for (let i = 0; i < data.length; i++) {
+                    const t = i / sampleRate;
+                    const impact = Math.sin(2 * Math.PI * 150 * t) * Math.exp(-t * 15);
+                    const click = Math.sin(2 * Math.PI * 800 * t) * Math.exp(-t * 25);
+                    data[i] = (impact + click * 0.3) * 0.5;
+                }
+                
+                return buffer;
+            }
+            
+            // ... 其他音效生成方法的简化版本
+            generateSimpleSFX(sampleRate, freq, duration, type = 'sine') {
+                const buffer = this.audioContext.createBuffer(1, duration * sampleRate, sampleRate);
+                const data = buffer.getChannelData(0);
+                
+                for (let i = 0; i < data.length; i++) {
+                    const t = i / sampleRate;
+                    let wave;
+                    
+                    switch (type) {
+                        case 'noise':
+                            wave = Math.random() - 0.5;
+                            break;
+                        case 'sawtooth':
+                            wave = (2 * (t * freq % 1)) - 1;
+                            break;
+                        default:
+                            wave = Math.sin(2 * Math.PI * freq * t);
+                    }
+                    
+                    const envelope = Math.exp(-t * 5);
+                    data[i] = wave * envelope * 0.3;
+                }
+                
+                return buffer;
+            }
+            
+            // 使用简化方法生成其他音效
+            generateCardHoverSFX(sampleRate) { return this.generateSimpleSFX(sampleRate, 600, 0.1); }
+            generateCardSelectSFX(sampleRate) { return this.generateSimpleSFX(sampleRate, 1000, 0.15); }
+            generateCardFlipSFX(sampleRate) { return this.generateSimpleSFX(sampleRate, 400, 0.25, 'sawtooth'); }
+            generateCardShuffleSFX(sampleRate) { return this.generateSimpleSFX(sampleRate, 300, 0.8, 'noise'); }
+            generateCardActivateSFX(sampleRate) { return this.generateSimpleSFX(sampleRate, 800, 0.5); }
+            
+            generateButtonClickSFX(sampleRate) { return this.generateSimpleSFX(sampleRate, 1200, 0.1); }
+            generateButtonHoverSFX(sampleRate) { return this.generateSimpleSFX(sampleRate, 800, 0.08); }
+            generateConfirmSFX(sampleRate) { return this.generateSimpleSFX(sampleRate, 600, 0.3); }
+            generateCancelSFX(sampleRate) { return this.generateSimpleSFX(sampleRate, 400, 0.2); }
+            generateErrorSFX(sampleRate) { return this.generateSimpleSFX(sampleRate, 300, 0.4, 'sawtooth'); }
+            generateSuccessSFX(sampleRate) { return this.generateSimpleSFX(sampleRate, 523, 0.5); }
+            
+            generateAttackSFX(sampleRate) { return this.generateSimpleSFX(sampleRate, 80, 0.3, 'sawtooth'); }
+            generateDamageSFX(sampleRate) { return this.generateSimpleSFX(sampleRate, 200, 0.4); }
+            generateNeutralizeSFX(sampleRate) { return this.generateSimpleSFX(sampleRate, 400, 0.6); }
+            generateVictorySFX(sampleRate) { return this.generateSimpleSFX(sampleRate, 523, 1.0); }
+            generateDefeatSFX(sampleRate) { return this.generateSimpleSFX(sampleRate, 200, 0.8); }
+            
+            generateShenshaActivateSFX(sampleRate) { return this.generateSimpleSFX(sampleRate, 300, 0.7); }
+            generateAuspiciousSFX(sampleRate) { return this.generateSimpleSFX(sampleRate, 440, 0.5); }
+            generateInauspiciousSFX(sampleRate) { return this.generateSimpleSFX(sampleRate, 150, 0.5); }
+            generateSpecialSFX(sampleRate) { return this.generateSimpleSFX(sampleRate, 500, 0.6); }
+            
+            generateTurnStartSFX(sampleRate) { return this.generateSimpleSFX(sampleRate, 880, 0.4); }
+            generateTurnEndSFX(sampleRate) { return this.generateSimpleSFX(sampleRate, 660, 0.3); }
+            generateGameStartSFX(sampleRate) { return this.generateSimpleSFX(sampleRate, 523, 1.2); }
+            generateGameEndSFX(sampleRate) { return this.generateSimpleSFX(sampleRate, 440, 1.0); }
+            
+            playSFX(sfxName, volume = 1.0, pitch = 1.0) {
+                if (!this.sfxEnabled || !this.audioContext) {
+                    this.log('⚠️ 音效已禁用或未初始化', 'warning');
+                    return;
+                }
+                
+                const buffer = this.sfxBuffers.get(sfxName);
+                if (!buffer) {
+                    this.log(`❌ 音效 "${sfxName}" 不存在`, 'error');
+                    return;
+                }
+                
+                try {
+                    const source = this.audioContext.createBufferSource();
+                    source.buffer = buffer;
+                    
+                    const gainNode = this.audioContext.createGain();
+                    gainNode.gain.value = volume * this.sfxVolume;
+                    
+                    source.playbackRate.value = pitch;
+                    
+                    source.connect(gainNode);
+                    gainNode.connect(this.audioContext.destination);
+                    
+                    source.start();
+                    
+                    this.log(`🔊 播放音效 "${sfxName}" (音量: ${(volume * this.sfxVolume * 100).toFixed(0)}%, 音调: ${pitch})`, 'success');
+                    
+                } catch (error) {
+                    this.log(`❌ 播放音效 "${sfxName}" 失败: ${error.message}`, 'error');
+                }
+            }
+            
+            setSFXVolume(volume) {
+                this.sfxVolume = Math.max(0, Math.min(1, volume));
+                this.log(`🔊 音效音量设置为 ${(this.sfxVolume * 100).toFixed(0)}%`, 'info');
+            }
+            
+            toggleSFX() {
+                this.sfxEnabled = !this.sfxEnabled;
+                this.log(this.sfxEnabled ? '🔊 音效已开启' : '🔇 音效已关闭', 'info');
+                return this.sfxEnabled;
+            }
+            
+            log(message, type = 'info') {
+                const logContainer = document.getElementById('logContainer');
+                const logEntry = document.createElement('div');
+                logEntry.className = `log-entry ${type}`;
+                logEntry.innerHTML = `<span style="color: #666;">[${new Date().toLocaleTimeString()}]</span> ${message}`;
+                logContainer.appendChild(logEntry);
+                logContainer.scrollTop = logContainer.scrollHeight;
+                
+                // 更新状态显示
+                const status = document.getElementById('status');
+                status.innerHTML = `<strong>状态:</strong> ${message}`;
+                status.className = `status ${type}`;
+            }
+        }
+        
+        // 全局音效管理器实例
+        let sfxManager = new SimpleSFXManager();
+        
+        // 初始化音效系统
+        async function initSFXSystem() {
+            const success = await sfxManager.init();
+            if (success) {
+                document.getElementById('status').innerHTML = '<strong>状态:</strong> ✅ 音效系统已就绪，可以开始测试';
+                document.getElementById('status').className = 'status success';
+            }
+        }
+        
+        // 播放指定音效
+        function playSFX(sfxName) {
+            sfxManager.playSFX(sfxName);
+        }
+        
+        // 切换音效开关
+        function toggleSFX() {
+            const isEnabled = sfxManager.toggleSFX();
+            document.getElementById('status').innerHTML = `<strong>状态:</strong> ${isEnabled ? '🔊 音效已开启' : '🔇 音效已关闭'}`;
+            document.getElementById('status').className = `status ${isEnabled ? 'success' : 'error'}`;
+        }
+        
+        // 设置音量
+        function setVolume(value) {
+            const volume = value / 100;
+            sfxManager.setSFXVolume(volume);
+            document.getElementById('volumeLabel').textContent = `${value}%`;
+        }
+        
+        // 随机测试音效
+        function testRandomSFX() {
+            const allSFX = Array.from(sfxManager.sfxBuffers.keys());
+            if (allSFX.length === 0) {
+                sfxManager.log('❌ 没有可用的音效，请先初始化音效系统', 'error');
+                return;
+            }
+            
+            const randomSFX = allSFX[Math.floor(Math.random() * allSFX.length)];
+            const randomVolume = 0.5 + Math.random() * 0.5; // 50%-100%音量
+            const randomPitch = 0.8 + Math.random() * 0.4; // 0.8-1.2音调
+            
+            sfxManager.playSFX(randomSFX, randomVolume, randomPitch);
+        }
+        
+        // 清空日志
+        function clearLog() {
+            document.getElementById('logContainer').innerHTML = '<div class="log-entry info">🔊 日志已清空</div>';
+        }
+        
+        // 序列测试函数
+        function testCardSequence() {
+            const sequence = ['card_draw', 'card_hover', 'card_select', 'card_place', 'card_activate'];
+            let index = 0;
+            
+            function playNext() {
+                if (index < sequence.length) {
+                    sfxManager.playSFX(sequence[index]);
+                    index++;
+                    setTimeout(playNext, 600);
+                }
+            }
+            
+            sfxManager.log('🎴 开始卡牌序列测试...', 'info');
+            playNext();
+        }
+        
+        function testBattleSequence() {
+            const sequence = ['battle_attack', 'battle_damage', 'battle_neutralize'];
+            let index = 0;
+            
+            function playNext() {
+                if (index < sequence.length) {
+                    sfxManager.playSFX(sequence[index]);
+                    index++;
+                    setTimeout(playNext, 800);
+                } else {
+                    setTimeout(() => sfxManager.playSFX('battle_victory'), 1000);
+                }
+            }
+            
+            sfxManager.log('⚔️ 开始战斗序列测试...', 'info');
+            playNext();
+        }
+        
+        function testUISequence() {
+            const sequence = ['ui_button_hover', 'ui_button_click', 'ui_confirm', 'ui_success'];
+            let index = 0;
+            
+            function playNext() {
+                if (index < sequence.length) {
+                    sfxManager.playSFX(sequence[index]);
+                    index++;
+                    setTimeout(playNext, 500);
+                }
+            }
+            
+            sfxManager.log('🎮 开始UI序列测试...', 'info');
+            playNext();
+        }
+        
+        function testShenshaSequence() {
+            const sequence = ['shensha_activate', 'shensha_auspicious', 'shensha_inauspicious', 'shensha_special'];
+            let index = 0;
+            
+            function playNext() {
+                if (index < sequence.length) {
+                    sfxManager.playSFX(sequence[index]);
+                    index++;
+                    setTimeout(playNext, 1000);
+                }
+            }
+            
+            sfxManager.log('⚡ 开始神煞序列测试...', 'info');
+            playNext();
+        }
+        
+        // 页面加载完成后自动初始化
+        window.addEventListener('load', () => {
+            sfxManager.log('🎮 L-Zore 音效系统演示页面加载完成', 'info');
+            sfxManager.log('💡 点击"🎵 初始化音效系统"开始体验所有音效', 'info');
+        });
+    </script>
+</body>
+</html> 

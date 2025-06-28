@@ -33,31 +33,31 @@ export class SpeechSynthesisManager {
         shensha: {
             rate: 0.9,
             pitch: 1.2,
-            volume: 0.95, // 提高神煞语音音量
+            volume: 1.0, // 提升到最大音量确保清晰
             lang: 'zh-CN'
         },
         system: {
             rate: 1.0,
             pitch: 1.0,
-            volume: 0.8, // 提高系统语音音量
+            volume: 0.9, // 大幅提升系统语音音量
             lang: 'zh-CN'
         },
         battle: {
             rate: 1.1,
             pitch: 1.3,
-            volume: 0.95, // 提高战斗语音音量
+            volume: 1.0, // 提升到最大音量确保突出
             lang: 'zh-CN'
         },
         narrative: {
             rate: 0.8,
             pitch: 1.0,
-            volume: 0.9,
+            volume: 0.95, // 提升叙述音量
             lang: 'zh-CN'
         },
         entrance: {
             rate: 0.8,
             pitch: 1.3,
-            volume: 1.0, // 入场台词最大音量，确保戏剧效果突出
+            volume: 1.0, // 保持最大音量，确保戏剧效果突出
             lang: 'zh-CN'
         }
     };
@@ -71,7 +71,7 @@ export class SpeechSynthesisManager {
             voice: null,
             rate: 0.9,
             pitch: 1.2,
-            volume: 0.95,
+            volume: 1.0, // 默认音量提升到最大
             lang: 'zh-CN'
         };
         this.initialize();
