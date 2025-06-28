@@ -428,7 +428,8 @@ export class LZoreGameScene extends Phaser.Scene {
                 onGameEnd: (winner) => this.gameStateManager.onGameEnd(winner),
                 getGameState: () => this.gameState,
                 getEffectPanelStatus: () => this.isEffectPanelOpen,
-                setEffectPanelStatus: (status) => { this.isEffectPanelOpen = status; }
+                setEffectPanelStatus: (status) => { this.isEffectPanelOpen = status; },
+                getLifeElementManager: () => this.lifeElementManager // 🔥 新增：传递生命元素管理器引用
             }
         );
         
@@ -1336,6 +1337,23 @@ export class LZoreGameScene extends Phaser.Scene {
         
         // 为场上所有卡牌生成生命元素
         this.lifeElementManager.generateLifeElementsPerTurn(this.placedCards);
+        
+        // 🔥 新增：检查生命元素耗尽的卡牌
+        const removedCards = this.lifeElementManager.checkLifeElementDepletion(this.placedCards, {
+            moveToDiscardPile: (card) => this.moveToDiscardPile(card)
+        });
+        
+        // 从placedCards中移除已经标记为移除的卡牌
+        if (removedCards.length > 0) {
+            removedCards.forEach(removedCard => {
+                const index = this.placedCards.indexOf(removedCard);
+                if (index > -1) {
+                    this.placedCards.splice(index, 1);
+                }
+            });
+            
+            console.log(`💀 检查完成：${removedCards.length}张卡牌因生命元素耗尽被移除`);
+        }
         
         // 更新UI状态
         this.updateGameStateUI();

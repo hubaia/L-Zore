@@ -21,6 +21,9 @@ export class ReactEventManager {
     // 添加执行锁，防止重复执行
     private isExecutingEffect: boolean = false;
     
+    // 🔥 新增：生命元素管理器引用
+    private lifeElementManager?: any;
+    
     constructor(
         scene: Phaser.Scene,
         callbacks: {
@@ -34,6 +37,7 @@ export class ReactEventManager {
             getGameState: () => any;
             getEffectPanelStatus: () => boolean;
             setEffectPanelStatus: (status: boolean) => void;
+            getLifeElementManager?: () => any; // 新增：获取生命元素管理器
         }
     ) {
         this.scene = scene;
@@ -49,6 +53,11 @@ export class ReactEventManager {
         // 获取效果面板状态的引用 - 改为实时获取
         this.getEffectPanelStatus = callbacks.getEffectPanelStatus;
         this.setEffectPanelStatus = callbacks.setEffectPanelStatus;
+        
+        // 🔥 获取生命元素管理器引用
+        if (callbacks.getLifeElementManager) {
+            this.lifeElementManager = callbacks.getLifeElementManager();
+        }
     }
     
     /**
@@ -242,21 +251,49 @@ export class ReactEventManager {
                 const { card, cardData: targetCardData } = target.data;
                 
                 if (actionType === 'damage') {
-                    // 直接中和目标神煞卡
-                    card.setData('neutralized', true);
-                    card.setAlpha(0.5);
-                    card.list.forEach((child: any) => {
-                        if (child.setTint) {
-                            child.setTint(0x666666);
+                    // 🔥 新机制：使用生命元素损耗而不是直接中和
+                    if (this.lifeElementManager && targetCardData.lifeElementGeneration) {
+                        const damageResult = this.lifeElementManager.damageLifeElements(targetCardData, value);
+                        
+                        this.showMessage(
+                            `${cardData.name} 以${damageResult.actualDamage}炁克元素攻击了 ${targetCardData.name}！` + 
+                            (damageResult.isDestroyed ? '生命元素耗尽！' : `剩余${targetCardData.currentLifeElements}枚`), 
+                            damageResult.isDestroyed ? 'error' : 'success'
+                        );
+                        
+                        // 更新卡牌视觉效果
+                        this.updateCardLifeElementsDisplay(card, targetCardData);
+                        
+                        // 如果应该移除，延迟移入弃牌堆
+                        if (damageResult.shouldRemove) {
+                            card.setData('neutralized', true);
+                            card.setAlpha(0.5);
+                            card.list.forEach((child: any) => {
+                                if (child.setTint) {
+                                    child.setTint(0x666666);
+                                }
+                            });
+                            
+                            this.scene.time.delayedCall(1500, () => {
+                                this.moveToDiscardPile(card);
+                            });
                         }
-                    });
-                    
-                    this.showMessage(`${cardData.name} 以${value}炁克元素中和了 ${targetCardData.name}！`, 'success');
-                    
-                    // 延迟后移入弃牌堆
-                    this.scene.time.delayedCall(1500, () => {
-                        this.moveToDiscardPile(card);
-                    });
+                    } else {
+                        // 回退到旧机制（没有生命元素的卡牌）
+                        card.setData('neutralized', true);
+                        card.setAlpha(0.5);
+                        card.list.forEach((child: any) => {
+                            if (child.setTint) {
+                                child.setTint(0x666666);
+                            }
+                        });
+                        
+                        this.showMessage(`${cardData.name} 以${value}炁克元素中和了 ${targetCardData.name}！`, 'success');
+                        
+                        this.scene.time.delayedCall(1500, () => {
+                            this.moveToDiscardPile(card);
+                        });
+                    }
                 } else {
                     // 增益效果：强化己方神煞卡
                     const glowEffect = this.scene.add.graphics();
@@ -358,5 +395,53 @@ export class ReactEventManager {
         this.scene.events.off('effectPanelClose');
         this.scene.events.off('executeMultiTargetEffect');
         this.scene.events.off('requestCurrentAllocations');
+    }
+    
+    /**
+     * 更新卡牌生命元素显示
+     */
+    private updateCardLifeElementsDisplay(cardContainer: Phaser.GameObjects.Container, cardData: LZoreCard): void {
+        // 查找或创建生命元素显示
+        let lifeElementText = cardContainer.list.find(child => 
+            child.getData && child.getData('lifeElementDisplay')
+        ) as Phaser.GameObjects.Text;
+        
+        if (!lifeElementText) {
+            lifeElementText = this.scene.add.text(0, 60, '', {
+                fontSize: '12px',
+                color: '#ffff00',
+                fontStyle: 'bold',
+                backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                padding: { x: 4, y: 2 }
+            });
+            lifeElementText.setOrigin(0.5);
+            lifeElementText.setData('lifeElementDisplay', true);
+            cardContainer.add(lifeElementText);
+        }
+        
+        const current = cardData.currentLifeElements || 0;
+        const max = cardData.maxLifeElements || 0;
+        const elementType = cardData.lifeElementGeneration?.elementType || 'special';
+        
+        if (current > 0) {
+            lifeElementText.setText(`💎${current}/${max} ${this.getElementName(elementType)}`);
+        } else {
+            lifeElementText.setText('💀耗尽');
+            lifeElementText.setColor('#ff4444');
+        }
+    }
+    
+    /**
+     * 获取元素中文名称
+     */
+    private getElementName(element: string): string {
+        const names = {
+            'metal': '金',
+            'wood': '木',
+            'water': '水',
+            'fire': '火',
+            'earth': '土'
+        };
+        return names[element as keyof typeof names] || '特';
     }
 } 

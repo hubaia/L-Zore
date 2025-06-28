@@ -414,4 +414,190 @@ export class LifeElementManager {
             canGenerate: !!(cardData.appearConditions && cardData.lifeElementGeneration)
         };
     }
+    
+    /**
+     * 减少卡牌生命元素（受到伤害时）
+     */
+    damageLifeElements(cardData: LZoreCard, damage: number): {
+        actualDamage: number;
+        isDestroyed: boolean;
+        shouldRemove: boolean;
+    } {
+        const current = cardData.currentLifeElements || 0;
+        const actualDamage = Math.min(damage, current);
+        
+        cardData.currentLifeElements = current - actualDamage;
+        
+        const isDestroyed = cardData.currentLifeElements <= 0;
+        
+        // 🔥 凶神特殊留场机制：即使生命元素清零，也有可能留场
+        let shouldRemove = isDestroyed;
+        
+        if (cardData.type === 'inauspicious' && isDestroyed) {
+            // 凶神特殊规则：30%概率即使清零也留场（体现凶神的顽固性）
+            const survivalChance = Math.random();
+            if (survivalChance < 0.3) {
+                shouldRemove = false;
+                cardData.currentLifeElements = 1; // 保留1点生命元素
+                
+                this.showMessage(
+                    `💀 ${cardData.name} 展现凶神顽性！即使重创也拒绝离场！`,
+                    'warning'
+                );
+                
+                console.log(`🔥 凶神 ${cardData.name} 触发留场机制，保留1点生命元素`);
+            } else {
+                this.showMessage(
+                    `💥 ${cardData.name} 生命元素耗尽，凶神之力消散！`,
+                    'error'
+                );
+            }
+        } else if (isDestroyed) {
+            this.showMessage(
+                `💎 ${cardData.name} 生命元素耗尽，神煞之力消散！`,
+                'warning'
+            );
+        }
+        
+        return {
+            actualDamage,
+            isDestroyed,
+            shouldRemove
+        };
+    }
+    
+    /**
+     * 检查所有场上卡牌的生命元素状态，移除应该销毁的卡牌
+     */
+    checkLifeElementDepletion(
+        placedCards: Phaser.GameObjects.Container[],
+        callbacks: {
+            moveToDiscardPile: (card: Phaser.GameObjects.Container) => void;
+        }
+    ): Phaser.GameObjects.Container[] {
+        const cardsToRemove: Phaser.GameObjects.Container[] = [];
+        
+        placedCards.forEach(cardContainer => {
+            const cardData = cardContainer.getData('cardData') as LZoreCard;
+            if (!cardData || !cardData.lifeElementGeneration) return;
+            
+            const current = cardData.currentLifeElements || 0;
+            
+            // 检查是否需要移除
+            if (current <= 0 && !cardContainer.getData('neutralized')) {
+                // 对于凶神，再次检查是否触发特殊留场机制
+                if (cardData.type === 'inauspicious') {
+                    const survivalChance = Math.random();
+                    if (survivalChance < 0.15) { // 15%概率触发紧急留场
+                        cardData.currentLifeElements = 1;
+                        
+                        // 视觉效果：凶神挣扎留场
+                        this.createInauspiciousSurvivalEffect(cardContainer);
+                        
+                        this.showMessage(
+                            `👹 ${cardData.name} 凶性难除！强行留在场上！`,
+                            'error'
+                        );
+                        
+                        console.log(`👹 凶神 ${cardData.name} 触发紧急留场机制`);
+                        return; // 不移除
+                    }
+                }
+                
+                // 标记为生命元素耗尽
+                cardContainer.setData('lifeElementsDepleted', true);
+                cardsToRemove.push(cardContainer);
+                
+                this.showMessage(
+                    `💀 ${cardData.name} 生命元素完全耗尽，即将离场！`,
+                    'warning'
+                );
+            }
+        });
+        
+        // 移除应该销毁的卡牌
+        cardsToRemove.forEach(card => {
+            // 创建消散特效
+            this.createDepletionEffect(card);
+            
+            // 延迟移除，让玩家看到特效
+            this.scene.time.delayedCall(1500, () => {
+                callbacks.moveToDiscardPile(card);
+            });
+        });
+        
+        return cardsToRemove;
+    }
+    
+    /**
+     * 创建生命元素耗尽特效
+     */
+    private createDepletionEffect(cardContainer: Phaser.GameObjects.Container): void {
+        // 创建消散粒子效果
+        const particles = this.scene.add.particles(cardContainer.x, cardContainer.y, 'spark', {
+            speed: { min: 50, max: 100 },
+            scale: { start: 0.3, end: 0 },
+            lifespan: 1000,
+            alpha: { start: 0.8, end: 0 },
+            tint: 0x666666
+        });
+        
+        // 卡牌逐渐消失
+        this.scene.tweens.add({
+            targets: cardContainer,
+            alpha: 0.3,
+            scaleX: 0.9,
+            scaleY: 0.9,
+            duration: 1500,
+            ease: 'Power2.easeOut'
+        });
+        
+        // 清理粒子效果
+        this.scene.time.delayedCall(1500, () => {
+            if (particles && particles.active) {
+                particles.destroy();
+            }
+        });
+    }
+    
+    /**
+     * 创建凶神留场特效
+     */
+    private createInauspiciousSurvivalEffect(cardContainer: Phaser.GameObjects.Container): void {
+        // 创建红色闪光效果
+        const flash = this.scene.add.graphics();
+        flash.fillStyle(0xff0000, 0.6);
+        flash.fillRect(cardContainer.x - 65, cardContainer.y - 95, 130, 190);
+        flash.setDepth(99);
+        
+        // 闪烁动画
+        this.scene.tweens.add({
+            targets: flash,
+            alpha: 0,
+            duration: 500,
+            yoyo: true,
+            repeat: 3,
+            ease: 'Power2.easeInOut',
+            onComplete: () => {
+                flash.destroy();
+            }
+        });
+        
+        // 创建凶神气息粒子
+        const darkParticles = this.scene.add.particles(cardContainer.x, cardContainer.y, 'spark', {
+            speed: { min: 30, max: 60 },
+            scale: { start: 0.4, end: 0 },
+            lifespan: 800,
+            alpha: { start: 0.9, end: 0 },
+            tint: 0x8B0000,
+            quantity: 3
+        });
+        
+        // 清理粒子效果
+        this.scene.time.delayedCall(2000, () => {
+            if (darkParticles && darkParticles.active) {
+                darkParticles.destroy();
+            }
+        });
+    }
 } 
