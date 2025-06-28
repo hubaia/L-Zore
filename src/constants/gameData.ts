@@ -198,7 +198,7 @@ export const GAME_CONFIG = {
     
     // 即时系统配置
     CYCLE_DURATION: 10, // 每个周期10秒
-    COOLDOWN_DURATION: 10, // 冷却时间10秒
+    COOLDOWN_DURATION: 5, // 冷却时间5秒
     AUTO_DRAW_INTERVAL: 3, // 每3秒自动抽卡
     PRIORITY_TIMEOUT: 15 // 优先权超时时间15秒
 };

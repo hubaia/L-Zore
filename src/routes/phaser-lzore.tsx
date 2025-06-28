@@ -206,7 +206,7 @@ export default function PhaserLZorePage() {
                                     <span className="text-orange-400 mt-0.5">🕐</span>
                                     <div>
                                         <div className="font-semibold text-orange-400">冷却系统</div>
-                                        <div className="text-gray-300">使用神煞后进入10秒冷却期</div>
+                                        <div className="text-gray-300">使用神煞后进入5秒冷却期</div>
                                     </div>
                                 </div>
                                 

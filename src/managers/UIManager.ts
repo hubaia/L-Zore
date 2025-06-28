@@ -212,7 +212,7 @@ export class UIManager {
             '• 双方同时进行抽卡和出牌',
             '• 先打出卡牌的玩家获得优先权',
             '• 拥有优先权时可使用神煞能力',
-            '• 使用神煞后进入10秒冷却期'
+            '• 使用神煞后进入5秒冷却期'
         ];
         
         basicOperations.forEach((operation, index) => {
@@ -293,7 +293,7 @@ export class UIManager {
         
         // 指南文本
         const guideText = this.scene.add.text(width / 2, barY + barHeight / 2, 
-            '💡 提示：这是即时卡牌系统，双方同时操作！先出牌者获得优先权 | 使用神煞后有10秒冷却期', {
+            '💡 提示：这是即时卡牌系统，双方同时操作！先出牌者获得优先权 | 使用神煞后有5秒冷却期', {
             fontSize: '11px',
             color: '#88ffff'
         });
